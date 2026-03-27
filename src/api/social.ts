@@ -23,7 +23,11 @@ export const groupsApi = {
     return response.data;
   },
   getUsers: async (groupId: string) => {
-    const response = await apiClient.get<{ users: string[] }>(`/group/${groupId}/users`);
+    const response = await apiClient.get<{ users: any[] }>(`/group/${groupId}/users`);
+    return response.data;
+  },
+  get: async (groupId: string) => {
+    const response = await apiClient.get<Group>(`/group/${groupId}`);
     return response.data;
   }
 };

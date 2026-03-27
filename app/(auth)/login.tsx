@@ -3,7 +3,6 @@ import React, { useState } from 'react';
 import { Alert, KeyboardAvoidingView, Platform, SafeAreaView, StyleSheet, TouchableOpacity, View } from 'react-native';
 import { Button, Input, Typography } from '../../src/components/Shared';
 import { Colors, Spacing } from '../../src/theme/theme';
-import { Settings } from 'lucide-react-native';
 
 import { authApi } from '../../src/api/auth';
 import { useAuth } from '../../src/hooks/useAuth';
@@ -92,10 +91,10 @@ export default function LoginScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.white },
   inner: { flex: 1 },
-  logoContainer: { 
-    alignItems: 'center', 
+  logoContainer: {
+    alignItems: 'center',
     marginTop: 100,
-    marginBottom: 60 
+    marginBottom: 60
   },
   logoText: { color: Colors.primary, fontSize: 44, marginBottom: 8, fontWeight: '900' },
   tagline: { color: Colors.textSecondary, fontSize: 16, fontWeight: '500' },

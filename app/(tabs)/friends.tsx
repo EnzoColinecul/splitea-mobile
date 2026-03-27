@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, StyleSheet, ScrollView, TouchableOpacity, SafeAreaView } from 'react-native';
+import { SafeAreaView, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
 import { Typography } from '../../src/components/Shared';
 import { Colors, Spacing } from '../../src/theme/theme';
 

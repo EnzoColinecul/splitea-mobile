@@ -1,14 +1,14 @@
+import { ArrowDownLeft, Bell } from 'lucide-react-native';
 import React from 'react';
-import { View, StyleSheet, ScrollView, TouchableOpacity, SafeAreaView, Platform } from 'react-native';
-import { Bell, Settings, ArrowDownLeft } from 'lucide-react-native';
-import { Typography, Card } from '../../src/components/Shared';
-import { Colors, Spacing, BorderRadius } from '../../src/theme/theme';
+import { Platform, SafeAreaView, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
+import { Card, Typography } from '../../src/components/Shared';
+import { Colors, Spacing } from '../../src/theme/theme';
 
 export default function DashboardScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView contentContainerStyle={styles.scrollContent}>
-        
+
         {/* Header */}
         <View style={styles.header}>
           <Typography.Header style={styles.logoText}>Spliteá!</Typography.Header>

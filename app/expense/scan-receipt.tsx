@@ -3,25 +3,25 @@ import { Image } from 'expo-image';
 import * as ImagePicker from 'expo-image-picker';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import * as SecureStore from 'expo-secure-store';
+import { Camera, ChevronLeft, Mic, Sparkles, Square } from 'lucide-react-native';
 import React, { useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
+  SafeAreaView,
   ScrollView,
   StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
   View,
-  SafeAreaView,
 } from 'react-native';
-import { ChevronLeft, Camera, Image as ImageIcon, Mic, Square, Sparkles } from 'lucide-react-native';
 import { uuid } from 'uuidv4';
-
-const EXPO_API_URL = '/api'; 
 import { expensesApi } from '../../src/api/expenses';
-import { Button, Typography, Card } from '../../src/components/Shared';
+import { Button, Card, Typography } from '../../src/components/Shared';
 import { BorderRadius, Colors, Spacing } from '../../src/theme/theme';
+
+const EXPO_API_URL = '/api';
 
 export default function ScanReceiptScreen() {
   const router = useRouter();
@@ -150,8 +150,8 @@ export default function ScanReceiptScreen() {
       </View>
 
       <ScrollView contentContainerStyle={styles.scroll}>
-        <Typography.Header style={styles.mainTitle}>Let AI handle the math ✨</Typography.Header>
-        
+        <Typography.Header style={styles.mainTitle}>Let AI Handle The Math!</Typography.Header>
+
         <TouchableOpacity onPress={imageUri ? handlePickImage : handleCameraCapture} style={styles.imageCard}>
           {imageUri ? (
             <Image source={{ uri: imageUri }} style={styles.preview} contentFit="cover" />
@@ -175,7 +175,7 @@ export default function ScanReceiptScreen() {
             multiline
             placeholderTextColor="#A09787"
           />
-          <TouchableOpacity 
+          <TouchableOpacity
             onPress={isRecording ? stopRecording : startRecording}
             style={[styles.micBtn, isRecording && styles.micBtnActive]}
           >
@@ -217,14 +217,14 @@ const styles = StyleSheet.create({
   headerTitle: { fontSize: 18, color: Colors.text, marginBottom: 0 },
   scroll: { padding: Spacing.xl, paddingBottom: 150 },
   mainTitle: { fontSize: 24, fontWeight: '800', marginBottom: Spacing.xl, color: Colors.text },
-  imageCard: { 
-    height: 240, 
-    width: '100%', 
-    borderRadius: 24, 
-    borderWidth: 2, 
-    borderColor: Colors.itemBorder, 
-    borderStyle: 'dashed', 
-    backgroundColor: Colors.white, 
+  imageCard: {
+    height: 240,
+    width: '100%',
+    borderRadius: 24,
+    borderWidth: 2,
+    borderColor: Colors.itemBorder,
+    borderStyle: 'dashed',
+    backgroundColor: Colors.white,
     overflow: 'hidden',
     justifyContent: 'center',
     alignItems: 'center',
@@ -234,13 +234,13 @@ const styles = StyleSheet.create({
   placeholder: { alignItems: 'center', gap: Spacing.md },
   cameraIconCircle: { width: 80, height: 80, borderRadius: 40, backgroundColor: '#FFF9F4', justifyContent: 'center', alignItems: 'center' },
   placeholderText: { color: Colors.textSecondary, fontWeight: '600', textAlign: 'center' },
-  
+
   sectionTitle: { marginBottom: Spacing.sm, fontSize: 12, letterSpacing: 1.2, color: Colors.textSecondary, fontWeight: '700' },
-  instructionCard: { 
-    flexDirection: 'row', 
-    alignItems: 'flex-start', 
-    padding: Spacing.md, 
-    borderRadius: 20, 
+  instructionCard: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    padding: Spacing.md,
+    borderRadius: 20,
     backgroundColor: Colors.white,
     borderWidth: 1.5,
     borderColor: Colors.itemBorder,
@@ -249,13 +249,13 @@ const styles = StyleSheet.create({
   instructionInput: { flex: 1, fontSize: 16, color: Colors.text, fontWeight: '600', paddingTop: 4 },
   micBtn: { width: 44, height: 44, borderRadius: 22, backgroundColor: '#F8F9FA', justifyContent: 'center', alignItems: 'center' },
   micBtnActive: { backgroundColor: '#FFEEED' },
-  
+
   tipsRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: Spacing.md },
   tipsText: { color: Colors.textSecondary, fontWeight: '600' },
-  
+
   loadingOverlay: { marginTop: Spacing.xl, alignItems: 'center', gap: Spacing.md },
   loadingStep: { color: Colors.textSecondary, fontWeight: '700' },
-  
+
   footer: { position: 'absolute', bottom: 0, left: 0, right: 0, padding: Spacing.xl, paddingBottom: Spacing.xl + 20, backgroundColor: 'rgba(255, 255, 255, 0.95)' },
   analyzeBtn: { height: 56, borderRadius: BorderRadius.round },
 });

@@ -1,12 +1,12 @@
 import * as ImagePicker from 'expo-image-picker';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
+import { Camera, ChevronLeft, PenLine, Sparkles } from 'lucide-react-native';
 import React, { useState } from 'react';
-import { ActivityIndicator, Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View, SafeAreaView } from 'react-native';
-import { ChevronLeft, Sparkles, Camera, PenLine } from 'lucide-react-native';
+import { ActivityIndicator, Alert, SafeAreaView, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
 import { uuid } from 'uuidv4';
 import { expensesApi } from '../../src/api/expenses';
-import { Typography, Card } from '../../src/components/Shared';
-import { BorderRadius, Colors, Spacing } from '../../src/theme/theme';
+import { Card, Typography } from '../../src/components/Shared';
+import { Colors, Spacing } from '../../src/theme/theme';
 
 export default function ExpenseChoiceScreen() {
   const router = useRouter();
@@ -157,10 +157,10 @@ const styles = StyleSheet.create({
   scroll: { padding: Spacing.xl },
   mainTitle: { fontSize: 24, fontWeight: '800', marginBottom: Spacing.xl, color: Colors.text },
   methodCardWrapper: { marginBottom: Spacing.lg },
-  methodCard: { 
-    flexDirection: 'row', 
-    padding: Spacing.lg, 
-    borderRadius: 24, 
+  methodCard: {
+    flexDirection: 'row',
+    padding: Spacing.lg,
+    borderRadius: 24,
     alignItems: 'center',
     gap: Spacing.lg,
     borderWidth: 1.5,

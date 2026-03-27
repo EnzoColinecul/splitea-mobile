@@ -1,18 +1,20 @@
-import { useRouter, Stack } from 'expo-router';
-import React, { useEffect, useState } from 'react';
-import { ActivityIndicator, Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View, SafeAreaView } from 'react-native';
+import { Stack, useRouter } from 'expo-router';
 import { ChevronLeft } from 'lucide-react-native';
+import React, { useEffect, useState } from 'react';
+import { ActivityIndicator, Alert, SafeAreaView, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import apiClient from '../../src/api/api-client';
-import { Button, Typography, Card } from '../../src/components/Shared';
+import { groupsApi } from '../../src/api/social';
+import { Button, Typography } from '../../src/components/Shared';
 import { BorderRadius, Colors, Spacing } from '../../src/theme/theme';
 
 export default function ExpenseMethodScreen() {
   const router = useRouter();
-  
+
   const [friends, setFriends] = useState<any[]>([]);
   const [groups, setGroups] = useState<any[]>([]);
+  const [currentUser, setCurrentUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
-  
+
   const [selectedFriends, setSelectedFriends] = useState<string[]>([]);
   const [selectedGroup, setSelectedGroup] = useState<string | null>(null);
 
@@ -22,12 +24,19 @@ export default function ExpenseMethodScreen() {
 
   const fetchData = async () => {
     try {
-      const [fRes, gRes] = await Promise.all([
+      const [fRes, gRes, uRes] = await Promise.all([
         apiClient.get('/friend/list'),
-        apiClient.get('/group/list')
+        apiClient.get('/group/list'),
+        apiClient.get('/user/profile')
       ]);
       setFriends(fRes.data.friends || []);
       setGroups(gRes.data.groups || []);
+      setCurrentUser(uRes.data);
+      
+      // Auto-select "Me"
+      if (uRes.data) {
+        setSelectedFriends([uRes.data.user_id]);
+      }
     } catch (err) {
       console.error(err);
       Alert.alert('Error', 'Could not load friends or groups.');
@@ -38,7 +47,7 @@ export default function ExpenseMethodScreen() {
 
   const toggleFriend = (id: string, user_id: string) => {
     if (selectedGroup) setSelectedGroup(null);
-    setSelectedFriends(prev => 
+    setSelectedFriends(prev =>
       prev.includes(user_id) ? prev.filter(f => f !== user_id) : [...prev, user_id]
     );
   };
@@ -48,19 +57,40 @@ export default function ExpenseMethodScreen() {
     setSelectedGroup(id);
   };
 
-  const handleNext = () => {
+  const handleNext = async () => { // Made async
     let participants: any[] = [];
     if (selectedGroup) {
       const group = groups.find(g => g.group_id === selectedGroup);
-      // NOTE: For now mapping basic group info, actual participants logic might need group members fetch
-      participants = [{ id: 'group', name: group.name, isGroup: true }];
-    } else if (selectedFriends.length > 0) {
-      participants = friends
-        .filter(f => selectedFriends.includes(f.user_id))
-        .map(f => ({
-          id: f.user_id,
-          name: `${f.first_name} ${f.last_name}`
+      if (!group) return;
+      setLoading(true);
+      try {
+        const { users } = await groupsApi.getUsers(selectedGroup);
+        // Map users to participants format
+        participants = users.map((u: any) => ({
+          id: u.user_id || (u.id ? u.id : u),
+          name: u.first_name ? `${u.first_name} ${u.last_name}` : (u.name ? u.name : 'Member'),
+          isGroup: false // Expanded members are individuals
         }));
+      } catch (err) {
+        Alert.alert('Error', 'Could not load group members.');
+        return;
+      } finally {
+        setLoading(false);
+      }
+    } else if (selectedFriends.length > 0) {
+      const selectedInList = friends.filter(f => selectedFriends.includes(f.user_id));
+      participants = selectedInList.map(f => ({
+        id: f.user_id,
+        name: `${f.first_name} ${f.last_name}`
+      }));
+      
+      // Add current user if selected and not already in list (though they shouldn't be in friends)
+      if (currentUser && selectedFriends.includes(currentUser.user_id)) {
+        participants.unshift({
+          id: currentUser.user_id,
+          name: `${currentUser.first_name} ${currentUser.last_name}`
+        });
+      }
     } else {
       Alert.alert('Select participants', 'Please choose at least one friend or a group.');
       return;
@@ -103,10 +133,10 @@ export default function ExpenseMethodScreen() {
             <Text style={styles.emptyText}>You don't have any groups yet.</Text>
           ) : (
             groups.map(group => (
-              <TouchableOpacity 
-                key={group.group_id} 
+              <TouchableOpacity
+                key={group.group_id}
                 style={[
-                  styles.itemRow, 
+                  styles.itemRow,
                   selectedGroup === group.group_id && styles.itemRowSelected
                 ]}
                 onPress={() => selectGroup(group.group_id)}
@@ -125,16 +155,36 @@ export default function ExpenseMethodScreen() {
 
         <Typography.SubHeader style={[styles.sectionTitle, { marginTop: Spacing.xl }]}>FRIENDS</Typography.SubHeader>
         <View style={styles.listContainer}>
-          {friends.length === 0 ? (
+          {/* "Me" option */}
+          {currentUser && (
+            <TouchableOpacity
+              key="me"
+              style={[
+                styles.itemRow,
+                selectedFriends.includes(currentUser.user_id) && styles.itemRowSelected
+              ]}
+              onPress={() => toggleFriend('me', currentUser.user_id)}
+            >
+              <View style={[styles.avatar, { backgroundColor: '#FEE2E2' }]}>
+                <Text style={[styles.avatarText, { color: '#B91C1C' }]}>Me</Text>
+              </View>
+              <Text style={styles.itemName}>Me (You)</Text>
+              <View style={[styles.checkbox, selectedFriends.includes(currentUser.user_id) && styles.checkboxActive]}>
+                {selectedFriends.includes(currentUser.user_id) && <Text style={styles.check}>✓</Text>}
+              </View>
+            </TouchableOpacity>
+          )}
+
+          {friends.length === 0 && !currentUser ? (
             <Text style={styles.emptyText}>You don't have any friends yet.</Text>
           ) : (
             friends.map(friend => {
               const isSelected = selectedFriends.includes(friend.user_id);
               return (
-                <TouchableOpacity 
-                  key={friend.friendship_id} 
+                <TouchableOpacity
+                  key={friend.friendship_id}
                   style={[
-                    styles.itemRow, 
+                    styles.itemRow,
                     isSelected && styles.itemRowSelected
                   ]}
                   onPress={() => toggleFriend(friend.friendship_id, friend.user_id)}
@@ -154,9 +204,9 @@ export default function ExpenseMethodScreen() {
       </ScrollView>
 
       <View style={styles.footer}>
-        <Button 
-          title="Confirm Participants" 
-          onPress={handleNext} 
+        <Button
+          title="Confirm Participants"
+          onPress={handleNext}
           disabled={!selectedGroup && selectedFriends.length === 0}
           style={styles.nextBtn}
         />

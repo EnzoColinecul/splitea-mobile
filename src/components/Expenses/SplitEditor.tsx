@@ -1,5 +1,5 @@
 import React from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import { BorderRadius, Colors, Spacing } from '../../theme/theme';
 import { SplitType } from '../../types';
 import { Input, Typography } from '../Shared';
@@ -24,12 +24,12 @@ export const SplitEditor: React.FC<SplitEditorProps> = ({ currentUserId, partici
   const handleAmountChange = (userId: string, value: string) => {
     const numericValue = parseFloat(value) || 0;
     const newSplits = splits.map(s => s.userId === userId ? { ...s, amount: numericValue } : s);
-    
+
     // If we don't have a split object for this user yet, add it
     if (!newSplits.find(s => s.userId === userId)) {
       newSplits.push({ userId, amount: numericValue });
     }
-    
+
     onSplitsChange(newSplits);
   };
 
@@ -45,6 +45,9 @@ export const SplitEditor: React.FC<SplitEditorProps> = ({ currentUserId, partici
         <View key={p.id} style={[styles.row, minimalist && styles.minimalistRow]}>
           <View>
             <Typography.Body style={styles.name}>{p.name}</Typography.Body>
+            <Typography.Caption style={styles.subtitle}>
+              {p.id === currentUserId ? 'your share' : 'owes you'}
+            </Typography.Caption>
           </View>
           <Typography.Header style={[styles.amountLabel, minimalist && styles.minimalistAmount]}>
             ${equalAmt}
@@ -60,10 +63,13 @@ export const SplitEditor: React.FC<SplitEditorProps> = ({ currentUserId, partici
         <View key={p.id} style={[styles.rowInput, minimalist && styles.minimalistRow]}>
           <View style={{ flex: 1 }}>
             <Typography.Body style={styles.name}>{p.name}</Typography.Body>
+            <Typography.Caption style={styles.subtitle}>
+              {p.id === currentUserId ? 'your share' : 'owes you'}
+            </Typography.Caption>
           </View>
           <View style={{ width: 100 }}>
             {minimalist ? (
-               <Typography.Header style={styles.minimalistAmount}>${val || '0'}</Typography.Header>
+              <Typography.Header style={styles.minimalistAmount}>${val || '0'}</Typography.Header>
             ) : (
               <Input
                 value={val}
@@ -134,6 +140,12 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     fontSize: 16,
     color: Colors.text,
+  },
+  subtitle: {
+    fontSize: 12,
+    color: Colors.textSecondary,
+    fontWeight: '500',
+    marginTop: -2,
   },
   amountLabel: {
     fontSize: 18,

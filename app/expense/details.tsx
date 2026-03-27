@@ -1,15 +1,16 @@
 import * as ImagePicker from 'expo-image-picker';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
+import { Camera, ChevronLeft } from 'lucide-react-native';
 import React, { useEffect, useState } from 'react';
-import { ActivityIndicator, Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View, SafeAreaView, Platform } from 'react-native';
-import { ChevronLeft, Camera } from 'lucide-react-native';
+import { ActivityIndicator, Alert, SafeAreaView, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { uuid } from 'uuidv4';
-import { expensesApi } from '../../src/api/expenses';
 import apiClient from '../../src/api/api-client';
-import { Button, Input, Typography, Card } from '../../src/components/Shared';
-import { SplitEditor, SplitAmount } from '../../src/components/Expenses/SplitEditor';
+import { expensesApi } from '../../src/api/expenses';
+import { SplitAmount, SplitEditor } from '../../src/components/Expenses/SplitEditor';
+import { Button, Input, Typography } from '../../src/components/Shared';
 import { BorderRadius, Colors, Spacing } from '../../src/theme/theme';
 import { SplitType, User } from '../../src/types';
+import { Info } from 'lucide-react-native';
 
 export default function ExpenseDetailsScreen() {
   const router = useRouter();
@@ -97,10 +98,10 @@ export default function ExpenseDetailsScreen() {
     try {
       let apiSplits: any[] = [];
       if (splitType === SplitType.EQUALLY) {
-         const equalShare = totalAmount / participants.length;
-         apiSplits = participants.map((p: any) => ({ user_id: p.id, amount_owed: equalShare }));
+        const equalShare = totalAmount / participants.length;
+        apiSplits = participants.map((p: any) => ({ user_id: p.id, amount_owed: equalShare }));
       } else {
-         apiSplits = splits.map(s => ({ user_id: s.userId, amount_owed: s.amount }));
+        apiSplits = splits.map((s: SplitAmount) => ({ user_id: s.userId, amount_owed: s.amount }));
       }
 
       await expensesApi.create({
@@ -113,7 +114,7 @@ export default function ExpenseDetailsScreen() {
         splits: apiSplits,
         receipt_url: receiptUrl || undefined
       });
-      
+
       Alert.alert('Success', 'Expense created!', [{ text: 'OK', onPress: () => router.dismissAll() }]);
     } catch (err: any) {
       Alert.alert('Error', err?.message || 'Could not create expense');
@@ -141,46 +142,29 @@ export default function ExpenseDetailsScreen() {
         <View style={{ width: 44 }} />
       </View>
 
-      <ScrollView contentContainerStyle={styles.scroll}>
-        {/* WITH Section */}
-        <Typography.SubHeader style={styles.sectionTitle}>WITH</Typography.SubHeader>
-        <View style={styles.segmentedControl}>
-          <TouchableOpacity 
-            style={[styles.segment, selectionType === 'friends' && styles.segmentActive]}
-            disabled={true} // Read-only in this flow
-          >
-            <Text style={[styles.segmentText, selectionType === 'friends' && styles.segmentTextActive]}>Friends</Text>
-          </TouchableOpacity>
-          <TouchableOpacity 
-            style={[styles.segment, selectionType === 'group' && styles.segmentActive]}
-            disabled={true} // Read-only in this flow
-          >
-            <Text style={[styles.segmentText, selectionType === 'group' && styles.segmentTextActive]}>Group</Text>
-          </TouchableOpacity>
-        </View>
-
+      <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
         {/* DETAILS Section */}
-        <Typography.SubHeader style={[styles.sectionTitle, { marginTop: Spacing.xl }]}>EXPENSE DETAILS</Typography.SubHeader>
-        <Input 
-          label="Description" 
-          placeholder="What was it for?" 
-          value={description} 
-          onChangeText={setDescription} 
+        <Typography.SectionHeader>1. EXPENSE DETAILS</Typography.SectionHeader>
+        <Input
+          label="Title"
+          placeholder="e.g. Pizza Night, Drinks..."
+          value={description}
+          onChangeText={setDescription}
         />
-        <Input 
-          label="Amount ($)" 
-          placeholder="0.00" 
-          value={amount} 
-          onChangeText={setAmount} 
+        <Input
+          label="Amount ($)"
+          placeholder="0.00"
+          value={amount}
+          onChangeText={setAmount}
           keyboardType="numeric"
         />
 
         {/* SPLIT TYPE Section */}
-        <Typography.SubHeader style={[styles.sectionTitle, { marginTop: Spacing.xl }]}>SPLIT TYPE</Typography.SubHeader>
+        <Typography.SectionHeader style={{ marginTop: Spacing.xl }}>2. HOW TO SPLIT</Typography.SectionHeader>
         <View style={styles.splitTypeRow}>
           {([SplitType.EQUALLY, SplitType.PERCENTAGE, SplitType.EXACT] as any[]).map((type) => {
-             const label = type === SplitType.EXACT ? 'EXACT' : type.toUpperCase();
-             return (
+            const label = type === SplitType.EQUALLY ? 'EQUALLY' : type === SplitType.EXACT ? 'EXACT' : 'PERCENT';
+            return (
               <TouchableOpacity
                 key={type}
                 style={[styles.pill, splitType === type && styles.pillActive]}
@@ -192,7 +176,7 @@ export default function ExpenseDetailsScreen() {
           })}
         </View>
 
-        {/* Participant List - matching the screenshot's minimalist look */}
+        {/* Participant List */}
         <View style={styles.participantList}>
           <SplitEditor
             currentUserId={currentUser.user_id}
@@ -201,21 +185,51 @@ export default function ExpenseDetailsScreen() {
             totalAmount={parseFloat(amount) || 0}
             splits={splits}
             onSplitsChange={setSplits}
-            minimalist={true} // New prop for cleaner look
+            minimalist={true}
           />
         </View>
 
-        {/* Camera icon for receipt if needed */}
-        {!receiptUrl && !uploadingReceipt && (
-           <TouchableOpacity onPress={handlePickReceipt} style={styles.receiptFab}>
-             <Camera size={24} color={Colors.white} />
-           </TouchableOpacity>
-        )}
+        {/* ATTACH RECEIPT Section */}
+        <Typography.SectionHeader style={{ marginTop: Spacing.xl }}>3. ATTACH RECEIPT (OPTIONAL)</Typography.SectionHeader>
+        <TouchableOpacity 
+          style={styles.attachCard} 
+          onPress={handlePickReceipt}
+          activeOpacity={0.7}
+        >
+          {uploadingReceipt ? (
+            <ActivityIndicator color={Colors.primary} />
+          ) : receiptUrl ? (
+            <View style={styles.receiptPreviewContainer}>
+              <View style={styles.receiptIconCircle}>
+                <Camera size={20} color={Colors.primary} />
+              </View>
+              <Typography.Body style={styles.receiptText}>Receipt attached successfully</Typography.Body>
+              <TouchableOpacity onPress={() => setReceiptUrl(null)}>
+                <Typography.Caption style={{ color: Colors.danger, fontWeight: '600' }}>Remove</Typography.Caption>
+              </TouchableOpacity>
+            </View>
+          ) : (
+            <>
+              <View style={styles.receiptIconCircle}>
+                <Camera size={20} color={Colors.primary} />
+              </View>
+              <Typography.Body style={styles.receiptText}>Tap to upload or take a photo</Typography.Body>
+            </>
+          )}
+        </TouchableOpacity>
+
+        {/* Blue Info Box */}
+        <View style={styles.infoBox}>
+          <Info size={18} color="#0E7490" style={{ marginTop: 2 }} />
+          <Typography.Caption style={styles.infoText}>
+            Splits are calculated based on the total amount. You can adjust individual shares if needed.
+          </Typography.Caption>
+        </View>
       </ScrollView>
 
       <View style={styles.footer}>
         <Button
-          title={loading ? "Creating..." : "Create Expense"}
+          title={loading ? "Creating..." : "Confirm & Create"}
           onPress={handleCreate}
           disabled={!description || !amount || loading || uploadingReceipt}
           style={styles.createBtn}
@@ -243,16 +257,74 @@ const styles = StyleSheet.create({
   segmentActive: { backgroundColor: Colors.white, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 4, elevation: 2 },
   segmentText: { color: Colors.textSecondary, fontWeight: '600', fontSize: 15 },
   segmentTextActive: { color: Colors.primary, fontWeight: '700' },
-  
+
   splitTypeRow: { flexDirection: 'row', gap: Spacing.sm, marginBottom: Spacing.lg },
-  pill: { paddingVertical: 8, paddingHorizontal: 16, borderRadius: BorderRadius.md, borderWidth: 1.5, borderColor: Colors.itemBorder, backgroundColor: Colors.white },
+  pill: { 
+    flex: 1, 
+    paddingVertical: 12, 
+    borderRadius: BorderRadius.md, 
+    borderWidth: 1.5, 
+    borderColor: Colors.itemBorder, 
+    backgroundColor: Colors.white,
+    alignItems: 'center',
+    justifyContent: 'center'
+  },
   pillActive: { backgroundColor: Colors.primary, borderColor: Colors.primary },
   pillText: { fontSize: 13, fontWeight: '700', color: Colors.textSecondary },
   pillTextActive: { color: Colors.white },
 
-  participantList: { marginTop: Spacing.lg },
-  receiptFab: { position: 'absolute', right: 0, top: 40, backgroundColor: '#3B82F6', width: 44, height: 44, borderRadius: 22, justifyContent: 'center', alignItems: 'center', shadowColor: '#3B82F6', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8, elevation: 6 },
+  participantList: { marginTop: Spacing.md },
   
+  attachCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F9FAFB',
+    borderRadius: BorderRadius.xl,
+    padding: Spacing.lg,
+    borderWidth: 1.5,
+    borderColor: Colors.itemBorder,
+    borderStyle: 'dashed',
+    marginBottom: Spacing.lg,
+  },
+  receiptIconCircle: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#FFF2E6', // Light orange tint
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: Spacing.md,
+  },
+  receiptText: {
+    flex: 1,
+    fontSize: 15,
+    color: Colors.textSecondary,
+    fontWeight: '500',
+  },
+  receiptPreviewContainer: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+
+  infoBox: {
+    flexDirection: 'row',
+    backgroundColor: '#ECFEFF', // Cyan/Light blue tint
+    borderRadius: 12,
+    padding: Spacing.md,
+    marginBottom: Spacing.xl,
+    gap: Spacing.sm,
+    borderWidth: 1,
+    borderColor: '#CFFAFE',
+  },
+  infoText: {
+    flex: 1,
+    fontSize: 13,
+    color: '#0E7490',
+    lineHeight: 18,
+    fontWeight: '500',
+  },
+
   footer: {
     position: 'absolute',
     bottom: 0,
@@ -260,7 +332,9 @@ const styles = StyleSheet.create({
     right: 0,
     padding: Spacing.xl,
     paddingBottom: Spacing.xl + 20,
-    backgroundColor: 'rgba(255, 255, 255, 0.95)', // White background
+    backgroundColor: 'white',
+    borderTopWidth: 1,
+    borderTopColor: Colors.itemBorder,
   },
   createBtn: { height: 56, borderRadius: BorderRadius.md },
 });

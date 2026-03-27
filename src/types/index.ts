@@ -27,13 +27,11 @@ export interface Group {
 }
 
 export interface Friend {
-  friend_id: string;
+  friendship_id: string;
   user_id: string;
-  friend_user_id: string;
   first_name: string;
   last_name: string;
   email: string;
-  status: 'pending' | 'accepted' | 'rejected';
   created_at: string;
 }
 
@@ -63,21 +61,30 @@ export enum SplitType {
 }
 
 export interface ExpenseSplit {
-  split_id: string;
+  expense_split_id: string;
   expense_id: string;
   user_id: string;
-  amount: number;
-  is_paid: boolean;
+  amount_owed: number;
+  percentage?: number;
+  shares?: number;
+  is_paid: string;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface Expense {
   expense_id: string;
-  description: string;
-  amount: number;
-  payer_id: string;
   group_id?: string;
-  category?: string;
+  title: string;
+  total_amount: number;
+  paid_by: string;
+  description?: string;
+  expense_type: string;
+  split_type: string;
+  currency: string;
+  expense_date: string;
   created_at: string;
+  updated_at: string;
   splits: ExpenseSplit[];
 }
 

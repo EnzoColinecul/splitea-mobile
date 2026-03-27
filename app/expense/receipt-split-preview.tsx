@@ -1,23 +1,21 @@
-import { useLocalSearchParams, useRouter, Stack } from 'expo-router';
+import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
+import { CheckCircle2, ChevronLeft, Info } from 'lucide-react-native';
 import React, { useState } from 'react';
 import {
   Alert,
+  SafeAreaView,
   ScrollView,
   StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
   View,
-  SafeAreaView,
 } from 'react-native';
-import { ChevronLeft, Info, CheckCircle2 } from 'lucide-react-native';
 import {
-  expensesApi,
-  LineItem,
   ProposedExpense,
-  ReceiptAnalyzeResponse,
+  ReceiptAnalyzeResponse
 } from '../../src/api/expenses';
-import { Button, Typography, Card } from '../../src/components/Shared';
+import { Button, Card, Typography } from '../../src/components/Shared';
 import { BorderRadius, Colors, Spacing } from '../../src/theme/theme';
 
 export default function ReceiptSplitPreviewScreen() {
@@ -65,12 +63,12 @@ export default function ReceiptSplitPreviewScreen() {
     // But usually AI Split produces splits for ONE expense or multiple.
     // Let's assume we go to Step 4 with the first expense or a combined one.
     // Or just create them here as "Approve" step.
-    
+
     // User said: "finally, User confirm the information and create the expense"
     // So let's navigate to details.tsx with the first AI-proposed expense for final confirm.
-    
+
     if (expenses.length > 1) {
-       Alert.alert('Multiple Expenses', 'The AI found multiple sub-groups. We will proceed with the combined details.');
+      Alert.alert('Multiple Expenses', 'The AI found multiple sub-groups. We will proceed with the combined details.');
     }
 
     router.push({
@@ -98,7 +96,7 @@ export default function ReceiptSplitPreviewScreen() {
 
       <ScrollView contentContainerStyle={styles.scroll}>
         <Typography.Header style={styles.mainTitle}>Review the split 📋</Typography.Header>
-        
+
         <View style={styles.receiptSummary}>
           <Typography.Body style={styles.receiptLabel}>RECEIPT TOTAL</Typography.Body>
           <Typography.Header style={styles.receiptValue}>${initial.receipt_total?.toFixed(2)}</Typography.Header>
@@ -107,8 +105,8 @@ export default function ReceiptSplitPreviewScreen() {
         {expenses.map((exp, expIndex) => (
           <Card key={expIndex} style={styles.expenseCard}>
             <View style={styles.cardHeader}>
-               <CheckCircle2 size={18} color={Colors.primary} />
-               <Typography.SubHeader style={styles.cardTitle}>{exp.title || 'Expense'}</Typography.SubHeader>
+              <CheckCircle2 size={18} color={Colors.primary} />
+              <Typography.SubHeader style={styles.cardTitle}>{exp.title || 'Expense'}</Typography.SubHeader>
             </View>
 
             <View style={styles.splitsList}>
@@ -134,15 +132,15 @@ export default function ReceiptSplitPreviewScreen() {
             </View>
 
             <View style={styles.cardFooter}>
-               <Typography.Body style={styles.subtotalLabel}>Subtotal</Typography.Body>
-               <Typography.SubHeader style={styles.subtotalValue}>${exp.total_amount.toFixed(2)}</Typography.SubHeader>
+              <Typography.Body style={styles.subtotalLabel}>Subtotal</Typography.Body>
+              <Typography.SubHeader style={styles.subtotalValue}>${exp.total_amount.toFixed(2)}</Typography.SubHeader>
             </View>
           </Card>
         ))}
 
         <View style={styles.infoRow}>
-           <Info size={16} color={Colors.textSecondary} />
-           <Typography.Caption style={styles.infoText}>You can adjust any amount manually.</Typography.Caption>
+          <Info size={16} color={Colors.textSecondary} />
+          <Typography.Caption style={styles.infoText}>You can adjust any amount manually.</Typography.Caption>
         </View>
 
         <View style={{ height: 100 }} />
@@ -166,7 +164,7 @@ const styles = StyleSheet.create({
   headerTitle: { fontSize: 18, color: Colors.text, marginBottom: 0 },
   scroll: { padding: Spacing.xl },
   mainTitle: { fontSize: 24, fontWeight: '800', marginBottom: Spacing.lg, color: Colors.text },
-  
+
   receiptSummary: { backgroundColor: '#F8FAFC', borderRadius: 20, padding: Spacing.xl, alignItems: 'center', marginBottom: Spacing.xl, borderWidth: 1.5, borderColor: Colors.itemBorder },
   receiptLabel: { fontSize: 13, color: Colors.textSecondary, fontWeight: '700', letterSpacing: 1 },
   receiptValue: { fontSize: 36, color: Colors.primary, fontWeight: '900', marginBottom: 0 },
@@ -174,18 +172,18 @@ const styles = StyleSheet.create({
   expenseCard: { marginBottom: Spacing.lg, borderRadius: 24, padding: Spacing.lg, borderWidth: 1.5, borderColor: Colors.itemBorder },
   cardHeader: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: Spacing.md },
   cardTitle: { marginBottom: 0, fontSize: 16, color: Colors.text },
-  
+
   splitsList: { gap: Spacing.md },
   splitRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   splitLeft: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm },
   avatar: { width: 32, height: 32, borderRadius: 16, backgroundColor: '#F3F4F6', justifyContent: 'center', alignItems: 'center', borderWidth: 1, borderColor: Colors.itemBorder },
   avatarText: { color: Colors.primary, fontWeight: 'bold', fontSize: 14 },
   name: { fontWeight: '600', color: Colors.text },
-  
+
   amountInputContainer: { flexDirection: 'row', alignItems: 'center', gap: 2, borderBottomWidth: 1.5, borderBottomColor: Colors.itemBorder, paddingHorizontal: 4 },
   dollar: { color: Colors.textSecondary, fontSize: 15, fontWeight: '700' },
   amountInput: { fontSize: 17, fontWeight: '700', color: Colors.text, minWidth: 60, textAlign: 'right' },
-  
+
   cardFooter: { flexDirection: 'row', justifyContent: 'flex-end', alignItems: 'center', gap: 12, marginTop: Spacing.lg, paddingTop: Spacing.md, borderTopWidth: 1, borderTopColor: Colors.itemBorder },
   subtotalLabel: { fontSize: 14, color: Colors.textSecondary, fontWeight: '600' },
   subtotalValue: { marginBottom: 0, color: Colors.text, fontSize: 18 },

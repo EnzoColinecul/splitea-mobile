@@ -11,7 +11,7 @@ export const Button = ({ title, onPress, variant = 'primary', style, disabled }:
     variant === 'danger' && styles.buttonDanger,
     style
   ];
-  
+
   const textStyle = [
     styles.buttonText,
     variant === 'outline' && { color: Colors.primary }
@@ -46,10 +46,11 @@ export const Card = ({ children, style }: { children: React.ReactNode, style?: S
 );
 
 export const Typography = {
-  Header: ({ children, style }: { children: React.ReactNode, style?: StyleProp<TextStyle> }) => <Text style={[styles.header, style]}>{children}</Text>,
-  SubHeader: ({ children, style }: { children: React.ReactNode, style?: StyleProp<TextStyle> }) => <Text style={[styles.subHeader, style]}>{children}</Text>,
-  Body: ({ children, style }: { children: React.ReactNode, style?: StyleProp<TextStyle> }) => <Text style={[styles.body, style]}>{children}</Text>,
-  Caption: ({ children, style }: { children: React.ReactNode, style?: StyleProp<TextStyle> }) => <Text style={[styles.caption, style]}>{children}</Text>,
+  Header: ({ children, style, numberOfLines }: { children: React.ReactNode, style?: StyleProp<TextStyle>, numberOfLines?: number }) => <Text style={[styles.header, style]} numberOfLines={numberOfLines}>{children}</Text>,
+  SubHeader: ({ children, style, numberOfLines }: { children: React.ReactNode, style?: StyleProp<TextStyle>, numberOfLines?: number }) => <Text style={[styles.subHeader, style]} numberOfLines={numberOfLines}>{children}</Text>,
+  Body: ({ children, style, numberOfLines }: { children: React.ReactNode, style?: StyleProp<TextStyle>, numberOfLines?: number }) => <Text style={[styles.body, style]} numberOfLines={numberOfLines}>{children}</Text>,
+  Caption: ({ children, style, numberOfLines }: { children: React.ReactNode, style?: StyleProp<TextStyle>, numberOfLines?: number }) => <Text style={[styles.caption, style]} numberOfLines={numberOfLines}>{children}</Text>,
+  SectionHeader: ({ children, style }: { children: React.ReactNode, style?: StyleProp<TextStyle> }) => <Text style={[styles.sectionHeader, style]}>{String(children).toUpperCase()}</Text>,
 };
 
 const styles = StyleSheet.create({
@@ -65,8 +66,8 @@ const styles = StyleSheet.create({
   buttonOutline: { backgroundColor: 'transparent', borderWidth: 1, borderColor: Colors.primary },
   buttonDanger: { backgroundColor: Colors.danger },
   buttonText: { color: Colors.white, fontWeight: '700', fontSize: 16 },
-  
-  inputContainer: { marginBottom: Spacing.md, width: '100%'},
+
+  inputContainer: { marginBottom: Spacing.md, width: '100%' },
   label: { marginBottom: Spacing.xs, color: Colors.text, fontWeight: '700', fontSize: 13 },
   input: {
     backgroundColor: '#F9FAFB', // Very light gray/white contrast
@@ -77,10 +78,10 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: Colors.text,
   },
-  
+
   card: {
     backgroundColor: Colors.white,
-    borderRadius: BorderRadius.xl, 
+    borderRadius: BorderRadius.xl,
     padding: Spacing.lg,
     borderWidth: 1.5,
     borderColor: Colors.itemBorder,
@@ -90,9 +91,10 @@ const styles = StyleSheet.create({
     shadowRadius: 10,
     elevation: 2,
   },
-  
+
   header: { fontSize: 32, fontWeight: '800', color: Colors.text, marginBottom: Spacing.xs },
   subHeader: { fontSize: 20, fontWeight: '700', color: Colors.textSecondary, marginBottom: Spacing.md },
   body: { fontSize: 16, color: Colors.text },
   caption: { fontSize: 14, color: Colors.textSecondary },
+  sectionHeader: { fontSize: 13, fontWeight: '700', color: Colors.textSecondary, marginBottom: Spacing.sm, letterSpacing: 0.5 },
 });

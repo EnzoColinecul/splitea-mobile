@@ -1,7 +1,7 @@
 import { Tabs, useRouter } from 'expo-router';
+import { Home, Plus, Settings, User, Users } from 'lucide-react-native';
 import React from 'react';
 import { Platform, StyleSheet, TouchableOpacity, View } from 'react-native';
-import { Home, Users, Plus, User, Settings } from 'lucide-react-native';
 import { Colors } from '../../src/theme/theme';
 
 function CustomTabBarButton({ children, onPress }: any) {
@@ -33,47 +33,47 @@ export default function TabLayout() {
         tabBarShowLabel: true,
       }}
     >
-      <Tabs.Screen 
-        name="index" 
-        options={{ 
-          title: 'Spliteá!',
+      <Tabs.Screen
+        name="index"
+        options={{
+          title: 'Home',
           tabBarIcon: ({ color, size }) => <Home size={28} color={color} />
-        }} 
+        }}
       />
-      <Tabs.Screen 
-        name="groups" 
-        options={{ 
+      <Tabs.Screen
+        name="groups"
+        options={{
           title: 'Groups',
           tabBarIcon: ({ color, size }) => <Users size={28} color={color} />
-        }} 
+        }}
       />
-      <Tabs.Screen 
-        name="add" 
-        options={{ 
+      <Tabs.Screen
+        name="add"
+        options={{
           title: '',
           tabBarLabel: () => null,
           tabBarButton: (props) => (
-            <CustomTabBarButton 
-              {...props} 
-              onPress={() => router.push('/expense/method')} 
+            <CustomTabBarButton
+              {...props}
+              onPress={() => router.push('/expense/method')}
             />
           ),
           tabBarIcon: () => <Plus size={36} color={Colors.white} />
-        }} 
+        }}
       />
-      <Tabs.Screen 
-        name="friends" 
-        options={{ 
+      <Tabs.Screen
+        name="friends"
+        options={{
           title: 'Friends',
           tabBarIcon: ({ color, size }) => <User size={28} color={color} />
-        }} 
+        }}
       />
-      <Tabs.Screen 
-        name="settings" 
-        options={{ 
+      <Tabs.Screen
+        name="settings"
+        options={{
           title: 'Settings',
           tabBarIcon: ({ color, size }) => <Settings size={28} color={color} />
-        }} 
+        }}
       />
     </Tabs>
   );
