@@ -11,7 +11,7 @@ export interface SplitAmount {
 }
 
 interface SplitEditorProps {
-  currentUserId: string;
+  payerUserId: string;
   participants: Participant[];
   splitType: SplitType;
   totalAmount: number;
@@ -20,7 +20,7 @@ interface SplitEditorProps {
   minimalist?: boolean;
 }
 
-export const SplitEditor: React.FC<SplitEditorProps> = ({ currentUserId, participants, splitType, totalAmount, splits, onSplitsChange, minimalist }) => {
+export const SplitEditor: React.FC<SplitEditorProps> = ({ payerUserId, participants, splitType, totalAmount, splits, onSplitsChange, minimalist }) => {
   const handleAmountChange = (userId: string, value: string) => {
     const numericValue = parseFloat(value) || 0;
     const newSplits = splits.map(s => s.userId === userId ? { ...s, amount: numericValue } : s);
@@ -46,7 +46,7 @@ export const SplitEditor: React.FC<SplitEditorProps> = ({ currentUserId, partici
           <View>
             <Typography.Body style={styles.name}>{p.name}</Typography.Body>
             <Typography.Caption style={styles.subtitle}>
-              {p.id === currentUserId ? 'your share' : 'owes you'}
+              {p.id === payerUserId ? 'paid by this person' : `owes ${participants.find((participant) => participant.id === payerUserId)?.name?.split(' ')[0] || 'payer'}`}
             </Typography.Caption>
           </View>
           <Typography.Header style={[styles.amountLabel, minimalist && styles.minimalistAmount]}>
@@ -64,7 +64,7 @@ export const SplitEditor: React.FC<SplitEditorProps> = ({ currentUserId, partici
           <View style={{ flex: 1 }}>
             <Typography.Body style={styles.name}>{p.name}</Typography.Body>
             <Typography.Caption style={styles.subtitle}>
-              {p.id === currentUserId ? 'your share' : 'owes you'}
+              {p.id === payerUserId ? 'paid by this person' : `owes ${participants.find((participant) => participant.id === payerUserId)?.name?.split(' ')[0] || 'payer'}`}
             </Typography.Caption>
           </View>
           <View style={{ width: 100 }}>

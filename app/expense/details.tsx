@@ -1,6 +1,6 @@
 import * as ImagePicker from 'expo-image-picker';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
-import { Camera, ChevronLeft, Users, Info } from 'lucide-react-native';
+import { Camera, ChevronLeft, ChevronRight, Users, Info } from 'lucide-react-native';
 import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, SafeAreaView, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { uuid } from 'uuidv4';
@@ -28,6 +28,8 @@ export default function ExpenseDetailsScreen() {
   const [amount, setAmount] = useState(params.initialAmount || '');
   const [splitType, setSplitType] = useState<SplitType>(SplitType.EQUALLY);
   const [receiptUrl, setReceiptUrl] = useState<string | null>(params.receiptUrl || null);
+  const [paidBy, setPaidBy] = useState('');
+  const [selectingPayer, setSelectingPayer] = useState(false);
   const [loading, setLoading] = useState(false);
   const [uploadingReceipt, setUploadingReceipt] = useState(false);
 
@@ -54,6 +56,7 @@ export default function ExpenseDetailsScreen() {
     try {
       const res = await apiClient.get('/user/profile');
       setCurrentUser(res.data);
+      setPaidBy(res.data.user_id);
     } catch (err) {
       console.error('Failed to get user profile', err);
     }
@@ -96,6 +99,19 @@ export default function ExpenseDetailsScreen() {
     }
   };
 
+  const payerOptions = currentUser
+    ? participants.some((participant: any) => participant.id === currentUser.user_id)
+      ? participants
+      : [
+          {
+            id: currentUser.user_id,
+            name: `${currentUser.first_name} ${currentUser.last_name}`,
+          },
+          ...participants,
+        ]
+    : participants;
+  const selectedPayer = payerOptions.find((participant: any) => participant.id === paidBy) || payerOptions[0];
+
   const handleCreate = async () => {
     if (!currentUser) return;
     const totalAmount = parseFloat(amount);
@@ -132,7 +148,7 @@ export default function ExpenseDetailsScreen() {
         title: description,
         description: '',
         total_amount: totalAmount,
-        paid_by: currentUser.user_id,
+        paid_by: paidBy || currentUser.user_id,
         group_id: params.groupId || undefined,
         split_type: backendSplitType,
         splits: apiSplits,
@@ -152,6 +168,61 @@ export default function ExpenseDetailsScreen() {
       <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
         <ActivityIndicator size="large" color={Colors.primary} />
       </View>
+    );
+  }
+
+  if (selectingPayer) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <Stack.Screen options={{ headerShown: false }} />
+        <View style={styles.header}>
+          <TouchableOpacity onPress={() => setSelectingPayer(false)} style={styles.backBtn}>
+            <ChevronLeft size={28} color={Colors.text} />
+          </TouchableOpacity>
+          <Typography.SubHeader style={styles.headerTitle}>Select Payer</Typography.SubHeader>
+          <View style={{ width: 44 }} />
+        </View>
+
+        <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
+          <Typography.SectionHeader>WHO PAID</Typography.SectionHeader>
+          <View style={styles.payerList}>
+            {payerOptions.map((participant: any) => {
+              const isSelected = paidBy === participant.id;
+              const isCurrentUser = participant.id === currentUser.user_id;
+
+              return (
+                <TouchableOpacity
+                  key={participant.id}
+                  activeOpacity={0.8}
+                  onPress={() => {
+                    setPaidBy(participant.id);
+                    setSelectingPayer(false);
+                  }}
+                  style={[styles.payerOption, isSelected && styles.payerOptionSelected]}
+                >
+                  <View style={styles.payerAvatar}>
+                    <Text style={styles.payerAvatarText}>
+                      {participant.name?.charAt(0)?.toUpperCase() || '?'}
+                    </Text>
+                  </View>
+
+                  <View style={styles.payerInfo}>
+                    <Typography.Body style={styles.payerName}>
+                      {participant.name}
+                      {isCurrentUser ? ' (You)' : ''}
+                    </Typography.Body>
+                    <Typography.Caption style={styles.payerHint}>
+                      {isSelected ? 'Selected payer' : 'Tap to choose payer'}
+                    </Typography.Caption>
+                  </View>
+
+                  <View style={[styles.payerRadio, isSelected && styles.payerRadioSelected]} />
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+        </ScrollView>
+      </SafeAreaView>
     );
   }
 
@@ -190,8 +261,32 @@ export default function ExpenseDetailsScreen() {
           keyboardType="numeric"
         />
 
+        <Typography.SectionHeader style={{ marginTop: Spacing.xl }}>2. WHO PAID</Typography.SectionHeader>
+        {selectedPayer ? (
+          <TouchableOpacity activeOpacity={0.8} style={styles.selectedPayerCard} onPress={() => setSelectingPayer(true)}>
+            <View style={styles.payerAvatar}>
+              <Text style={styles.payerAvatarText}>
+                {selectedPayer.name?.charAt(0)?.toUpperCase() || '?'}
+              </Text>
+            </View>
+
+            <View style={styles.payerInfo}>
+              <Typography.Body style={styles.payerName}>
+                {selectedPayer.name}
+                {selectedPayer.id === currentUser.user_id ? ' (You)' : ''}
+              </Typography.Body>
+              <Typography.Caption style={styles.payerHint}>Selected payer</Typography.Caption>
+            </View>
+
+            <View style={styles.changePayerRow}>
+              <Typography.Body style={styles.changePayerText}>Change</Typography.Body>
+              <ChevronRight size={18} color={Colors.primary} />
+            </View>
+          </TouchableOpacity>
+        ) : null}
+
         {/* SPLIT TYPE Section */}
-        <Typography.SectionHeader style={{ marginTop: Spacing.xl }}>2. HOW TO SPLIT</Typography.SectionHeader>
+        <Typography.SectionHeader style={{ marginTop: Spacing.xl }}>3. HOW TO SPLIT</Typography.SectionHeader>
         <View style={styles.splitTypeRow}>
           {([SplitType.EQUALLY, SplitType.PERCENTAGE, SplitType.EXACT] as any[]).map((type) => {
             const label = type === SplitType.EQUALLY ? 'EQUALLY' : type === SplitType.EXACT ? 'EXACT' : 'PERCENT';
@@ -210,8 +305,8 @@ export default function ExpenseDetailsScreen() {
         {/* Participant List */}
         <View style={styles.participantList}>
           <SplitEditor
-            currentUserId={currentUser.user_id}
-            participants={participants}
+            payerUserId={paidBy || currentUser.user_id}
+            participants={payerOptions}
             splitType={splitType}
             totalAmount={parseFloat(amount) || 0}
             splits={splits}
@@ -221,7 +316,7 @@ export default function ExpenseDetailsScreen() {
         </View>
 
         {/* ATTACH RECEIPT Section */}
-        <Typography.SectionHeader style={{ marginTop: Spacing.xl }}>3. ATTACH RECEIPT (OPTIONAL)</Typography.SectionHeader>
+        <Typography.SectionHeader style={{ marginTop: Spacing.xl }}>4. ATTACH RECEIPT (OPTIONAL)</Typography.SectionHeader>
         <TouchableOpacity 
           style={styles.attachCard} 
           onPress={handlePickReceipt}
@@ -256,6 +351,7 @@ export default function ExpenseDetailsScreen() {
             Splits are calculated based on the total amount. You can adjust individual shares if needed.
           </Typography.Caption>
         </View>
+
       </ScrollView>
 
       <View style={styles.footer}>
@@ -372,6 +468,76 @@ const styles = StyleSheet.create({
     color: '#0E7490',
     lineHeight: 18,
     fontWeight: '500',
+  },
+  payerList: {
+    gap: Spacing.sm,
+    marginBottom: Spacing.xl,
+  },
+  payerOption: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: Spacing.md,
+    borderRadius: BorderRadius.lg,
+    borderWidth: 1.5,
+    borderColor: Colors.itemBorder,
+    backgroundColor: Colors.white,
+  },
+  payerOptionSelected: {
+    borderColor: Colors.primary,
+    backgroundColor: '#FFF9F4',
+  },
+  selectedPayerCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: Spacing.md,
+    borderRadius: BorderRadius.card,
+    borderWidth: 1.5,
+    borderColor: Colors.primary,
+    backgroundColor: Colors.white,
+    marginBottom: Spacing.sm,
+  },
+  payerAvatar: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#FFF2E6',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: Spacing.md,
+  },
+  payerAvatarText: {
+    color: Colors.primary,
+    fontSize: 16,
+    fontWeight: '700',
+  },
+  payerInfo: {
+    flex: 1,
+  },
+  payerName: {
+    fontWeight: '700',
+  },
+  payerHint: {
+    marginTop: 2,
+  },
+  changePayerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 2,
+  },
+  changePayerText: {
+    color: Colors.primary,
+    fontWeight: '700',
+  },
+  payerRadio: {
+    width: 18,
+    height: 18,
+    borderRadius: 9,
+    borderWidth: 2,
+    borderColor: Colors.itemBorder,
+  },
+  payerRadioSelected: {
+    borderColor: Colors.primary,
+    backgroundColor: Colors.primary,
   },
 
   footer: {
