@@ -2,7 +2,7 @@ import axios from 'axios';
 import * as SecureStore from 'expo-secure-store';
 import { authEvents } from '../utils/auth-events';
 
-const API_BASE_URL = 'http://localhost:8000/api'; // Update this to your local IP for physical device testing
+const API_BASE_URL = 'http://192.168.68.63:8000/api'; // Update this to your local IP for physical device testing
 
 const apiClient = axios.create({
   baseURL: API_BASE_URL,
@@ -38,12 +38,12 @@ apiClient.interceptors.response.use(
   (error) => {
     console.log(`[API Error] ${error.response?.status} from ${error.config?.url}`);
     console.log('[API Error Detail]', error.response?.data || error.message);
-    
+
     if (error.response?.status === 401) {
       console.warn('Unauthorized request, emitting event');
       authEvents.emitUnauthorized();
     }
-    
+
     return Promise.reject(error);
   }
 );

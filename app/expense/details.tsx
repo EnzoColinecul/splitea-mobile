@@ -1,16 +1,16 @@
 import * as ImagePicker from 'expo-image-picker';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
-import { Camera, ChevronLeft } from 'lucide-react-native';
+import { Camera, ChevronLeft, Users, Info } from 'lucide-react-native';
 import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, SafeAreaView, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { uuid } from 'uuidv4';
 import apiClient from '../../src/api/api-client';
+import { groupsApi } from '../../src/api/social';
 import { expensesApi } from '../../src/api/expenses';
 import { SplitAmount, SplitEditor } from '../../src/components/Expenses/SplitEditor';
 import { Button, Input, Typography } from '../../src/components/Shared';
 import { BorderRadius, Colors, Spacing } from '../../src/theme/theme';
 import { SplitType, User } from '../../src/types';
-import { Info } from 'lucide-react-native';
 
 export default function ExpenseDetailsScreen() {
   const router = useRouter();
@@ -20,6 +20,8 @@ export default function ExpenseDetailsScreen() {
     initialAmount?: string,
     receiptUrl?: string
   }>();
+  const participants = params.participants ? JSON.parse(params.participants) : [];
+  const [groupName, setGroupName] = useState<string | null>(null);
 
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [description, setDescription] = useState('');
@@ -30,15 +32,23 @@ export default function ExpenseDetailsScreen() {
   const [uploadingReceipt, setUploadingReceipt] = useState(false);
 
   // For the segmented control appearance
-  const [selectionType, setSelectionType] = useState<'friends' | 'group'>('friends');
-
   const [splits, setSplits] = useState<SplitAmount[]>([]);
-  const participants = params.participants ? JSON.parse(params.participants) : [];
 
   useEffect(() => {
     fetchCurrentUser();
-    if (params.groupId) setSelectionType('group');
+    if (params.groupId) {
+      fetchGroupName(params.groupId);
+    }
   }, []);
+
+  const fetchGroupName = async (id: string) => {
+    try {
+      const data = await groupsApi.get(id);
+      setGroupName(data.name);
+    } catch (err) {
+      console.error('Failed to get group name', err);
+    }
+  };
 
   const fetchCurrentUser = async () => {
     try {
@@ -98,11 +108,25 @@ export default function ExpenseDetailsScreen() {
     try {
       let apiSplits: any[] = [];
       if (splitType === SplitType.EQUALLY) {
-        const equalShare = totalAmount / participants.length;
-        apiSplits = participants.map((p: any) => ({ user_id: p.id, amount_owed: equalShare }));
+        // Handle rounding to ensure sum = totalAmount
+        const count = participants.length;
+        const baseShare = Math.floor((totalAmount / count) * 100) / 100;
+        const totalBase = baseShare * count;
+        const remainder = Math.round((totalAmount - totalBase) * 100) / 100;
+        
+        apiSplits = participants.map((p: any, index: number) => ({
+          user_id: p.id,
+          amount_owed: index === count - 1 ? Number((baseShare + remainder).toFixed(2)) : baseShare
+        }));
       } else {
         apiSplits = splits.map((s: SplitAmount) => ({ user_id: s.userId, amount_owed: s.amount }));
       }
+
+      // Map SplitType enum to backend strings
+      const backendSplitType = 
+        splitType === SplitType.EQUALLY ? 'equally' : 
+        splitType === SplitType.PERCENTAGE ? 'percentage' : 
+        'exact_amount';
 
       await expensesApi.create({
         title: description,
@@ -110,7 +134,7 @@ export default function ExpenseDetailsScreen() {
         total_amount: totalAmount,
         paid_by: currentUser.user_id,
         group_id: params.groupId || undefined,
-        split_type: "EXACT_AMOUNT",
+        split_type: backendSplitType,
         splits: apiSplits,
         receipt_url: receiptUrl || undefined
       });
@@ -141,6 +165,13 @@ export default function ExpenseDetailsScreen() {
         <Typography.SubHeader style={styles.headerTitle}>New Expense</Typography.SubHeader>
         <View style={{ width: 44 }} />
       </View>
+
+      {groupName && (
+        <View style={styles.groupBanner}>
+          <Users size={16} color={Colors.primary} />
+          <Text style={styles.groupBannerText}>Group: {groupName}</Text>
+        </View>
+      )}
 
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
         {/* DETAILS Section */}
@@ -242,6 +273,22 @@ export default function ExpenseDetailsScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.background },
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: Spacing.lg, paddingVertical: Spacing.md },
+  groupBanner: { 
+    flexDirection: 'row', 
+    alignItems: 'center', 
+    backgroundColor: '#EEF2FF', 
+    paddingHorizontal: Spacing.lg, 
+    paddingVertical: 8,
+    gap: 8,
+    marginHorizontal: Spacing.xl,
+    borderRadius: 8,
+    marginBottom: Spacing.sm,
+  },
+  groupBannerText: {
+    color: Colors.primary,
+    fontSize: 14,
+    fontWeight: '700',
+  },
   backBtn: { padding: Spacing.xs },
   headerTitle: { fontSize: 18, color: Colors.text, marginBottom: 0, fontWeight: '700' },
   scroll: { padding: Spacing.xl, paddingBottom: 150 },
