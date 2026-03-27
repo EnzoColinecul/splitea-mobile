@@ -1,6 +1,6 @@
 import axios from 'axios';
 import * as SecureStore from 'expo-secure-store';
-import { authEvents } from '../utils/auth-events';
+import { authEvents } from '@/utils/auth-events';
 
 const API_BASE_URL = 'http://192.168.68.63:8000/api'; // Update this to your local IP for physical device testing
 
