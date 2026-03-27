@@ -1,0 +1,23 @@
+{
+  "plugins": ["react", "react-native"],
+  "extends": ["eslint:recommended", "plugin:react/recommended", "plugin:react-native/all"],
+  "parserOptions": {
+    "ecmaFeatures": {
+      "jsx": true
+    }
+  },
+  "env": {
+    "react-native/react-native": true,
+    "node": true
+  },
+  "rules": {
+    // Add or override specific rules here
+    "react-native/no-inline-styles": "warn",
+    "no-unused-vars": "warn"
+  },
+  "settings": {
+    "react": {
+      "version": "detect" // Automatically detect the react version
+    }
+  }
+}
