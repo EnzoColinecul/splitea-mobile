@@ -24,6 +24,7 @@ export const BorderRadius = {
   sm: 8,
   md: 12,
   lg: 20,
+  card: 24,
   xl: 32,
   round: 999,
 };

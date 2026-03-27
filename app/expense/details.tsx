@@ -281,7 +281,9 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     gap: 8,
     marginHorizontal: Spacing.xl,
-    borderRadius: 8,
+    borderRadius: 20,
+    borderWidth: 1.5,
+    borderColor: Colors.itemBorder,
     marginBottom: Spacing.sm,
   },
   groupBannerText: {
@@ -301,7 +303,7 @@ const styles = StyleSheet.create({
     height: 48,
   },
   segment: { flex: 1, justifyContent: 'center', alignItems: 'center', borderRadius: 12 },
-  segmentActive: { backgroundColor: Colors.white, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 4, elevation: 2 },
+  segmentActive: { backgroundColor: Colors.white, borderWidth: 1.5, borderColor: Colors.itemBorder },
   segmentText: { color: Colors.textSecondary, fontWeight: '600', fontSize: 15 },
   segmentTextActive: { color: Colors.primary, fontWeight: '700' },
 
@@ -326,7 +328,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#F9FAFB',
-    borderRadius: BorderRadius.xl,
+    borderRadius: BorderRadius.card,
     padding: Spacing.lg,
     borderWidth: 1.5,
     borderColor: Colors.itemBorder,
@@ -357,12 +359,12 @@ const styles = StyleSheet.create({
   infoBox: {
     flexDirection: 'row',
     backgroundColor: '#ECFEFF', // Cyan/Light blue tint
-    borderRadius: 12,
+    borderRadius: 20,
     padding: Spacing.md,
     marginBottom: Spacing.xl,
     gap: Spacing.sm,
-    borderWidth: 1,
-    borderColor: '#CFFAFE',
+    borderWidth: 1.5,
+    borderColor: Colors.itemBorder,
   },
   infoText: {
     flex: 1,
@@ -379,7 +381,7 @@ const styles = StyleSheet.create({
     right: 0,
     padding: Spacing.xl,
     paddingBottom: Spacing.xl + 20,
-    backgroundColor: 'white',
+    backgroundColor: Colors.white,
     borderTopWidth: 1,
     borderTopColor: Colors.itemBorder,
   },

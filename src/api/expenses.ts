@@ -6,9 +6,9 @@ export const expensesApi = {
     const response = await apiClient.get<DashboardSummary>('/expense/user/summary');
     return response.data;
   },
-  listUserExpenses: async () => {
-    const response = await apiClient.get<{ expenses: Expense[] }>('/expense/user/expenses');
-    return response.data.expenses;
+  listUserExpenses: async (params?: { limit?: number; offset?: number }) => {
+    const response = await apiClient.get<{ expenses: Expense[]; total: number }>('/expense/user/expenses', { params });
+    return response.data;
   },
   create: async (data: any) => {
     const response = await apiClient.post<Expense>('/expense/create', data);

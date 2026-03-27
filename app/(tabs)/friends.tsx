@@ -1,7 +1,7 @@
 import React from 'react';
 import { SafeAreaView, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
-import { Typography } from '../../src/components/Shared';
-import { Colors, Spacing } from '../../src/theme/theme';
+import { Card, Typography } from '../../src/components/Shared';
+import { BorderRadius, Colors, Spacing } from '../../src/theme/theme';
 
 export default function FriendsScreen() {
   return (
@@ -16,7 +16,7 @@ export default function FriendsScreen() {
       <ScrollView contentContainerStyle={styles.scroll}>
         <Typography.SubHeader style={styles.sectionTitle}>RECENT FRIENDS</Typography.SubHeader>
         <View style={styles.list}>
-          <View style={styles.friendCard}>
+          <Card style={styles.friendCard}>
             <View style={[styles.avatarPlaceholder, { backgroundColor: '#F0FDF4' }]}>
               <Typography.Body style={{ color: '#15803D', fontWeight: 'bold' }}>E</Typography.Body>
             </View>
@@ -24,8 +24,8 @@ export default function FriendsScreen() {
               <Typography.Body style={styles.friendName}>Enzo lefleur</Typography.Body>
               <Typography.Caption>Settled up recently</Typography.Caption>
             </View>
-          </View>
-          <View style={styles.friendCard}>
+          </Card>
+          <Card style={styles.friendCard}>
             <View style={[styles.avatarPlaceholder, { backgroundColor: '#F0F9FF' }]}>
               <Typography.Body style={{ color: '#0369A1', fontWeight: 'bold' }}>Y</Typography.Body>
             </View>
@@ -33,7 +33,7 @@ export default function FriendsScreen() {
               <Typography.Body style={styles.friendName}>Yave helesco</Typography.Body>
               <Typography.Caption>Settled up recently</Typography.Caption>
             </View>
-          </View>
+          </Card>
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -41,15 +41,15 @@ export default function FriendsScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: Colors.white },
+  container: { flex: 1, backgroundColor: Colors.background },
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: Spacing.lg, paddingTop: 20 },
   title: { fontSize: 28, fontWeight: '800', marginBottom: 0 },
-  addBtn: { backgroundColor: Colors.primary, paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20 },
+  addBtn: { backgroundColor: Colors.primary, paddingHorizontal: 16, paddingVertical: 8, borderRadius: BorderRadius.round },
   addBtnText: { color: Colors.white, fontWeight: '700' },
   scroll: { padding: Spacing.lg },
   sectionTitle: { fontSize: 12, fontWeight: '700', color: Colors.textSecondary, letterSpacing: 1.2, marginBottom: Spacing.md },
   list: { gap: Spacing.md },
-  friendCard: { flexDirection: 'row', alignItems: 'center', padding: Spacing.md, backgroundColor: Colors.white, borderRadius: 20, borderWidth: 1.5, borderColor: Colors.itemBorder },
+  friendCard: { flexDirection: 'row', alignItems: 'center', padding: Spacing.md },
   avatarPlaceholder: { width: 48, height: 48, borderRadius: 24, justifyContent: 'center', alignItems: 'center', marginRight: Spacing.md, borderWidth: 1, borderColor: Colors.itemBorder },
   friendInfo: { flex: 1 },
   friendName: { fontWeight: '700', fontSize: 16 }

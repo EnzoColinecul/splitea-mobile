@@ -1,4 +1,4 @@
-import { Plus, Users, ChevronRight, RefreshCw } from 'lucide-react-native';
+import { Plus, Users } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 import React, { useEffect, useState, useCallback } from 'react';
 import { ActivityIndicator, FlatList, RefreshControl, SafeAreaView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
@@ -105,7 +105,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.lg, 
     paddingTop: Spacing.xl,
     paddingBottom: Spacing.md,
-    backgroundColor: Colors.white
+    backgroundColor: Colors.background
   },
   title: { fontSize: 32, fontWeight: '800', color: Colors.text },
   createBtn: { 
@@ -113,14 +113,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     paddingHorizontal: 16,
     paddingVertical: 8,
-    borderRadius: 20, 
+    borderRadius: BorderRadius.round,
     justifyContent: 'center', 
     alignItems: 'center',
-    shadowColor: Colors.primary,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 4
   },
   createBtnText: { color: Colors.white, fontWeight: '700', fontSize: 14 },
   list: { padding: Spacing.lg },
@@ -140,7 +135,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginRight: Spacing.md,
     borderWidth: 1.5,
-    borderColor: '#E0E7FF'
+    borderColor: Colors.itemBorder
   },
   avatarText: { fontWeight: '700', fontSize: 20, color: Colors.primary },
   textContainer: { flex: 1 },

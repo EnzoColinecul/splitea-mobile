@@ -89,10 +89,12 @@ export interface Expense {
 }
 
 export interface DashboardSummary {
-  total_owed_to_me: number;
-  total_i_owe: number;
-  balance: number;
-  recent_activities: any[];
+  user_id: string;
+  total_paid: number;
+  total_owed: number;
+  net_balance: number;
+  expenses_count: number;
+  splits_count: number;
 }
 
 export interface ExpenseStatistics {

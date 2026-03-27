@@ -72,8 +72,8 @@ const styles = StyleSheet.create({
   input: {
     backgroundColor: '#F9FAFB', // Very light gray/white contrast
     borderWidth: 1.5,
-    borderColor: Colors.border,
-    borderRadius: BorderRadius.md,
+    borderColor: Colors.itemBorder,
+    borderRadius: BorderRadius.lg,
     padding: Spacing.md,
     fontSize: 16,
     color: Colors.text,
@@ -81,15 +81,10 @@ const styles = StyleSheet.create({
 
   card: {
     backgroundColor: Colors.white,
-    borderRadius: BorderRadius.xl,
+    borderRadius: BorderRadius.card,
     padding: Spacing.lg,
     borderWidth: 1.5,
     borderColor: Colors.itemBorder,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.04,
-    shadowRadius: 10,
-    elevation: 2,
   },
 
   header: { fontSize: 32, fontWeight: '800', color: Colors.text, marginBottom: Spacing.xs },

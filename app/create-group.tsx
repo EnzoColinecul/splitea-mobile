@@ -165,20 +165,20 @@ const styles = StyleSheet.create({
   label: { fontSize: 14, fontWeight: '700', color: Colors.textSecondary, marginBottom: 8 },
   input: {
     backgroundColor: '#F8FAFC',
-    borderRadius: 16,
+    borderRadius: 20,
     padding: 16,
     fontSize: 16,
     color: Colors.text,
-    borderWidth: 1,
-    borderColor: '#E2E8F0'
+    borderWidth: 1.5,
+    borderColor: Colors.itemBorder
   },
   friendItem: {
     flexDirection: 'row',
     alignItems: 'center',
     padding: Spacing.md,
-    borderRadius: 20,
+    borderRadius: 24,
     borderWidth: 1.5,
-    borderColor: '#E2E8F0',
+    borderColor: Colors.itemBorder,
     marginBottom: Spacing.sm,
     backgroundColor: Colors.white
   },

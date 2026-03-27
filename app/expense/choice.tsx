@@ -6,7 +6,7 @@ import { ActivityIndicator, Alert, SafeAreaView, ScrollView, StyleSheet, Touchab
 import { uuid } from 'uuidv4';
 import { expensesApi } from '../../src/api/expenses';
 import { Card, Typography } from '../../src/components/Shared';
-import { Colors, Spacing } from '../../src/theme/theme';
+import { BorderRadius, Colors, Spacing } from '../../src/theme/theme';
 
 export default function ExpenseChoiceScreen() {
   const router = useRouter();
@@ -160,7 +160,7 @@ const styles = StyleSheet.create({
   methodCard: {
     flexDirection: 'row',
     padding: Spacing.lg,
-    borderRadius: 24,
+    borderRadius: BorderRadius.card,
     alignItems: 'center',
     gap: Spacing.lg,
     borderWidth: 1.5,

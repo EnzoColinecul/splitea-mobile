@@ -1,12 +1,12 @@
 import { useLocalSearchParams, useRouter, Stack } from 'expo-router';
 import { ChevronLeft, Plus, UserPlus, Receipt, ArrowUpCircle, ArrowDownCircle } from 'lucide-react-native';
 import React, { useEffect, useState } from 'react';
-import { ActivityIndicator, Alert, SafeAreaView, ScrollView, StyleSheet, TouchableOpacity, View, FlatList, Text } from 'react-native';
-import { groupsApi, friendsApi } from '../src/api/social';
+import { ActivityIndicator, Alert, SafeAreaView, ScrollView, StyleSheet, TouchableOpacity, View, Text } from 'react-native';
+import { groupsApi } from '../src/api/social';
 import { expensesApi } from '../src/api/expenses';
 import { Card, Typography, Button } from '../src/components/Shared';
 import { BorderRadius, Colors, Spacing } from '../src/theme/theme';
-import { Group, User, Expense } from '../src/types';
+import { Group, Expense } from '../src/types';
 import { AddMemberModal } from '../src/components/Groups/AddMemberModal';
 
 export default function GroupDetailScreen() {
@@ -35,7 +35,7 @@ export default function GroupDetailScreen() {
       setGroup(gData);
       setMembers(mData.users || []);
       setBalances(bData || []);
-      setExpenses(eData.filter((exp: Expense) => exp.group_id === groupId));
+      setExpenses((eData.expenses || []).filter((exp: Expense) => exp.group_id === groupId));
     } catch (err) {
       console.error(err);
       Alert.alert('Error', 'Could not load group details.');
@@ -171,7 +171,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between', 
     paddingHorizontal: Spacing.lg, 
     paddingVertical: Spacing.md,
-    backgroundColor: Colors.white
+    backgroundColor: Colors.background
   },
   headerTitle: { fontSize: 18, color: Colors.text, marginBottom: 0, fontWeight: '700' },
   backBtn: { padding: Spacing.xs },
@@ -179,12 +179,12 @@ const styles = StyleSheet.create({
   center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   scroll: { padding: Spacing.lg, paddingBottom: 50 },
   
-  summaryCard: { padding: Spacing.lg, marginBottom: Spacing.xl },
+  summaryCard: { padding: Spacing.lg, marginBottom: Spacing.xl, backgroundColor: '#F8FAFC', borderRadius: 24, borderColor: Colors.itemBorder },
   summaryLabel: { textAlign: 'center', marginBottom: Spacing.md, fontWeight: '700' },
   balanceRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-around', marginBottom: Spacing.md },
   balanceItem: { alignItems: 'center', gap: 4 },
   balanceValue: { fontSize: 24, fontWeight: '800', marginBottom: 2 },
-  divider: { width: 1, height: 40, backgroundColor: Colors.border },
+  divider: { width: 1, height: 40, backgroundColor: Colors.itemBorder },
 
   sectionTitle: { fontSize: 13, fontWeight: '700', color: Colors.textSecondary, letterSpacing: 1, marginBottom: Spacing.md },
   emptyText: { textAlign: 'center', marginTop: Spacing.md, color: Colors.textSecondary },
@@ -196,7 +196,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.lg, 
     paddingVertical: Spacing.md,
     marginBottom: Spacing.sm,
-    backgroundColor: '#F9FAFB'
+    backgroundColor: '#F8FAFC',
+    borderRadius: 24,
+    borderColor: Colors.itemBorder,
   },
   balanceText: { fontSize: 14, color: Colors.text },
   amountText: { fontWeight: '700', fontSize: 16, color: Colors.primary },
@@ -205,7 +207,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row', 
     alignItems: 'center', 
     padding: Spacing.md, 
-    marginBottom: Spacing.sm 
+    marginBottom: Spacing.sm,
+    borderRadius: 24,
+    borderColor: Colors.itemBorder,
   },
   receiptIcon: { width: 40, height: 40, borderRadius: 12, backgroundColor: '#FFF7ED', justifyContent: 'center', alignItems: 'center', marginRight: Spacing.md },
   expenseInfo: { flex: 1 },

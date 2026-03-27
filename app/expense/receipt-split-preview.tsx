@@ -165,11 +165,11 @@ const styles = StyleSheet.create({
   scroll: { padding: Spacing.xl },
   mainTitle: { fontSize: 24, fontWeight: '800', marginBottom: Spacing.lg, color: Colors.text },
 
-  receiptSummary: { backgroundColor: '#F8FAFC', borderRadius: 20, padding: Spacing.xl, alignItems: 'center', marginBottom: Spacing.xl, borderWidth: 1.5, borderColor: Colors.itemBorder },
+  receiptSummary: { backgroundColor: '#F8FAFC', borderRadius: BorderRadius.card, padding: Spacing.xl, alignItems: 'center', marginBottom: Spacing.xl, borderWidth: 1.5, borderColor: Colors.itemBorder },
   receiptLabel: { fontSize: 13, color: Colors.textSecondary, fontWeight: '700', letterSpacing: 1 },
   receiptValue: { fontSize: 36, color: Colors.primary, fontWeight: '900', marginBottom: 0 },
 
-  expenseCard: { marginBottom: Spacing.lg, borderRadius: 24, padding: Spacing.lg, borderWidth: 1.5, borderColor: Colors.itemBorder },
+  expenseCard: { marginBottom: Spacing.lg, borderRadius: BorderRadius.card, padding: Spacing.lg, borderWidth: 1.5, borderColor: Colors.itemBorder },
   cardHeader: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: Spacing.md },
   cardTitle: { marginBottom: 0, fontSize: 16, color: Colors.text },
 
@@ -191,6 +191,6 @@ const styles = StyleSheet.create({
   infoRow: { flexDirection: 'row', alignItems: 'center', gap: 6, justifyContent: 'center' },
   infoText: { color: Colors.textSecondary, fontWeight: '600' },
 
-  footer: { position: 'absolute', bottom: 0, left: 0, right: 0, padding: Spacing.xl, paddingBottom: Spacing.xl + 20, backgroundColor: 'rgba(255, 255, 255, 0.95)' },
+  footer: { position: 'absolute', bottom: 0, left: 0, right: 0, padding: Spacing.xl, paddingBottom: Spacing.xl + 20, backgroundColor: 'rgba(255, 255, 255, 0.95)', borderTopWidth: 1, borderTopColor: Colors.itemBorder },
   approveBtn: { height: 56, borderRadius: BorderRadius.round },
 });

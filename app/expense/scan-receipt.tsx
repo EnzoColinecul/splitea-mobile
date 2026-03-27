@@ -220,8 +220,8 @@ const styles = StyleSheet.create({
   imageCard: {
     height: 240,
     width: '100%',
-    borderRadius: 24,
-    borderWidth: 2,
+    borderRadius: BorderRadius.card,
+    borderWidth: 1.5,
     borderColor: Colors.itemBorder,
     borderStyle: 'dashed',
     backgroundColor: Colors.white,
@@ -240,7 +240,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'flex-start',
     padding: Spacing.md,
-    borderRadius: 20,
+    borderRadius: BorderRadius.card,
     backgroundColor: Colors.white,
     borderWidth: 1.5,
     borderColor: Colors.itemBorder,
@@ -256,6 +256,6 @@ const styles = StyleSheet.create({
   loadingOverlay: { marginTop: Spacing.xl, alignItems: 'center', gap: Spacing.md },
   loadingStep: { color: Colors.textSecondary, fontWeight: '700' },
 
-  footer: { position: 'absolute', bottom: 0, left: 0, right: 0, padding: Spacing.xl, paddingBottom: Spacing.xl + 20, backgroundColor: 'rgba(255, 255, 255, 0.95)' },
+  footer: { position: 'absolute', bottom: 0, left: 0, right: 0, padding: Spacing.xl, paddingBottom: Spacing.xl + 20, backgroundColor: 'rgba(255, 255, 255, 0.95)', borderTopWidth: 1, borderTopColor: Colors.itemBorder },
   analyzeBtn: { height: 56, borderRadius: BorderRadius.round },
 });
