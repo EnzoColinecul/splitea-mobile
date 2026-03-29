@@ -1,5 +1,5 @@
 import { expensesApi } from '@/api/expenses';
-import { Card, Typography } from '@/components/common/shared';
+import { BusyOverlay, Card, Typography } from '@/components/common/shared';
 import { BorderRadius, Colors, Spacing } from '@/theme/theme';
 import * as ImagePicker from 'expo-image-picker';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
@@ -12,10 +12,13 @@ export default function ExpenseChoiceScreen() {
   const router = useRouter();
   const { participants, groupId } = useLocalSearchParams<{ participants: string, groupId?: string }>();
   const [loading, setLoading] = useState(false);
+  const [loadingStep, setLoadingStep] = useState('');
+  const isBusy = loading;
 
   const processExtraction = async (imageUri: string) => {
     try {
       setLoading(true);
+      setLoadingStep('Uploading receipt...');
       const eventId = v4();
       const filename = `receipt_${Date.now()}.jpg`;
 
@@ -30,6 +33,7 @@ export default function ExpenseChoiceScreen() {
 
       if (!uploadResp.ok) throw new Error('Upload to S3 failed');
 
+      setLoadingStep('Extracting total...');
       const { total_amount } = await expensesApi.extractReceiptTotal({ s3_key: object_key });
 
       router.push({
@@ -46,16 +50,18 @@ export default function ExpenseChoiceScreen() {
       Alert.alert('Extraction Error', error?.message || 'Could not extract total from the receipt.');
     } finally {
       setLoading(false);
+      setLoadingStep('');
     }
   };
 
   const handleExtractChoice = () => {
+    if (isBusy) return;
     Alert.alert(
       'Extract Total',
       'Choose a source for your receipt',
       [
         {
-          text: 'Camera 📷',
+          text: 'Camera',
           onPress: async () => {
             const result = await ImagePicker.launchCameraAsync({ quality: 0.85 });
             if (!result.canceled && result.assets.length > 0) {
@@ -64,7 +70,7 @@ export default function ExpenseChoiceScreen() {
           }
         },
         {
-          text: 'Gallery 🖼️',
+          text: 'Gallery',
           onPress: async () => {
             const result = await ImagePicker.launchImageLibraryAsync({ quality: 0.85 });
             if (!result.canceled && result.assets.length > 0) {
@@ -78,6 +84,7 @@ export default function ExpenseChoiceScreen() {
   };
 
   const handleManual = () => {
+    if (isBusy) return;
     router.push({
       pathname: '/expense/details',
       params: { participants, groupId }
@@ -85,6 +92,7 @@ export default function ExpenseChoiceScreen() {
   };
 
   const handleSplitAI = () => {
+    if (isBusy) return;
     const parsedParticipants = JSON.parse(participants || '[]');
     router.push({
       pathname: '/expense/scan-receipt',
@@ -99,17 +107,17 @@ export default function ExpenseChoiceScreen() {
     <SafeAreaView style={styles.container}>
       <Stack.Screen options={{ headerShown: false }} />
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
+        <TouchableOpacity onPress={() => router.back()} style={styles.backBtn} disabled={isBusy}>
           <ChevronLeft size={28} color={Colors.text} />
         </TouchableOpacity>
         <Typography.SubHeader style={styles.headerTitle}>Add Expense</Typography.SubHeader>
         <View style={{ width: 44 }} />
       </View>
 
-      <ScrollView contentContainerStyle={styles.scroll}>
+      <ScrollView contentContainerStyle={styles.scroll} scrollEnabled={!isBusy}>
         <Typography.Header style={styles.mainTitle}>How would you like to add it?</Typography.Header>
 
-        <TouchableOpacity onPress={handleSplitAI} style={styles.methodCardWrapper}>
+        <TouchableOpacity onPress={handleSplitAI} style={styles.methodCardWrapper} disabled={isBusy}>
           <Card style={[styles.methodCard, styles.aiCard]}>
             <View style={styles.iconCircle}>
               <Sparkles size={32} color={Colors.white} />
@@ -133,7 +141,7 @@ export default function ExpenseChoiceScreen() {
           </Card>
         </TouchableOpacity>
 
-        <TouchableOpacity onPress={handleManual} style={styles.methodCardWrapper}>
+        <TouchableOpacity onPress={handleManual} style={styles.methodCardWrapper} disabled={isBusy}>
           <Card style={styles.methodCard}>
             <View style={[styles.iconCircle, { backgroundColor: '#F8F9FA' }]}>
               <PenLine size={32} color={Colors.textSecondary} />
@@ -145,6 +153,8 @@ export default function ExpenseChoiceScreen() {
           </Card>
         </TouchableOpacity>
       </ScrollView>
+
+      <BusyOverlay visible={isBusy} label={loadingStep} />
     </SafeAreaView>
   );
 }

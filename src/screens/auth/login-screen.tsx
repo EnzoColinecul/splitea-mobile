@@ -1,7 +1,7 @@
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import { Alert, KeyboardAvoidingView, Platform, SafeAreaView, StyleSheet, TouchableOpacity, View } from 'react-native';
-import { Button, Input, Typography } from '@/components/common/shared';
+import { BusyOverlay, Button, Input, Typography } from '@/components/common/shared';
 import { Colors, Spacing } from '@/theme/theme';
 
 import { authApi } from '@/api/auth';
@@ -13,6 +13,7 @@ export default function LoginScreen() {
   const [email, setEmail] = useState('enzocolinecul1997@gmail.com');
   const [password, setPassword] = useState('Enzo@1234');
   const [loading, setLoading] = useState(false);
+  const isBusy = loading;
 
   const handleLogin = async () => {
     if (!email || !password) {
@@ -55,6 +56,7 @@ export default function LoginScreen() {
               value={email}
               onChangeText={setEmail}
               placeholder="enzocolinecul1997@gmail.com"
+              editable={!isBusy}
             />
             <View style={{ height: Spacing.sm }} />
             <Input
@@ -63,9 +65,10 @@ export default function LoginScreen() {
               onChangeText={setPassword}
               placeholder="••••••••"
               secureTextEntry
+              editable={!isBusy}
             />
 
-            <TouchableOpacity style={styles.forgotPassword}>
+            <TouchableOpacity style={styles.forgotPassword} disabled={isBusy}>
               <Typography.Body style={styles.forgotText}>Forgot password?</Typography.Body>
             </TouchableOpacity>
 
@@ -73,17 +76,19 @@ export default function LoginScreen() {
               title={loading ? "Logging in..." : "Login"}
               onPress={handleLogin}
               style={styles.loginBtn}
+              disabled={isBusy}
             />
 
             <View style={styles.footer}>
               <Typography.Body style={styles.footerText}>Don't have an account? </Typography.Body>
-              <TouchableOpacity onPress={() => router.push('/(auth)/register')}>
+              <TouchableOpacity onPress={() => router.push('/(auth)/register')} disabled={isBusy}>
                 <Typography.Body style={styles.linkText}>Register</Typography.Body>
               </TouchableOpacity>
             </View>
           </View>
         </View>
       </KeyboardAvoidingView>
+      <BusyOverlay visible={isBusy} label="Logging in..." />
     </SafeAreaView>
   );
 }

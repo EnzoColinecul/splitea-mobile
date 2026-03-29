@@ -1,3 +1,9 @@
+import {
+  ProposedExpense,
+  ReceiptAnalyzeResponse
+} from '@/api/expenses';
+import { Button, Card, Typography } from '@/components/common/shared';
+import { BorderRadius, Colors, Spacing } from '@/theme/theme';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { CheckCircle2, ChevronLeft, Info } from 'lucide-react-native';
 import React, { useState } from 'react';
@@ -11,12 +17,6 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import {
-  ProposedExpense,
-  ReceiptAnalyzeResponse
-} from '@/api/expenses';
-import { Button, Card, Typography } from '@/components/common/shared';
-import { BorderRadius, Colors, Spacing } from '@/theme/theme';
 
 export default function ReceiptSplitPreviewScreen() {
   const router = useRouter();
@@ -77,6 +77,7 @@ export default function ReceiptSplitPreviewScreen() {
         participants: JSON.stringify(expenses[0].splits.map(s => ({ id: s.user_id, name: s.name }))),
         groupId,
         initialAmount: String(expenses[0].total_amount),
+        initialTitle: expenses[0].title || '',
         receiptUrl: receiptUrl,
         // We could pass more complex split data if needed
       }
@@ -95,7 +96,7 @@ export default function ReceiptSplitPreviewScreen() {
       </View>
 
       <ScrollView contentContainerStyle={styles.scroll}>
-        <Typography.Header style={styles.mainTitle}>Review the split 📋</Typography.Header>
+        <Typography.Header style={styles.mainTitle}>Review the split</Typography.Header>
 
         <View style={styles.receiptSummary}>
           <Typography.Body style={styles.receiptLabel}>RECEIPT TOTAL</Typography.Body>

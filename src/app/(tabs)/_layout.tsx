@@ -1,8 +1,8 @@
+import { Colors } from '@/theme/theme';
 import { Tabs, useRouter } from 'expo-router';
 import { Home, Plus, Settings, User, Users } from 'lucide-react-native';
 import React from 'react';
 import { Platform, StyleSheet, TouchableOpacity, View } from 'react-native';
-import { Colors } from '@/theme/theme';
 
 function CustomTabBarButton({ children, onPress }: any) {
   return (

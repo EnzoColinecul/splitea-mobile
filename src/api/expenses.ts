@@ -50,7 +50,21 @@ export const expensesApi = {
     const response = await apiClient.post('/expense/extract-receipt-total', data);
     return response.data as ReceiptTotalResponse;
   },
+  transcribeInstruction: async (formData: FormData) => {
+    const response = await apiClient.post<TranscribeAudioResponse>(
+      '/expense/transcribe-instruction',
+      formData,
+      {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      }
+    );
+    return response.data;
+  },
 };
+
+export interface TranscribeAudioResponse {
+  transcription: string;
+}
 
 export interface ReceiptTotalResponse {
   total_amount: number;

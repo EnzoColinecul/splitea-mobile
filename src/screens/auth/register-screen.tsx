@@ -2,7 +2,7 @@ import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import { Alert, KeyboardAvoidingView, Platform, SafeAreaView, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
 import { authApi } from '@/api/auth';
-import { Button, Input, Typography } from '@/components/common/shared';
+import { BusyOverlay, Button, Input, Typography } from '@/components/common/shared';
 import { Colors, Spacing } from '@/theme/theme';
 
 export default function RegisterScreen() {
@@ -12,6 +12,7 @@ export default function RegisterScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const isBusy = loading;
 
   const handleRegister = async () => {
     if (!firstName || !lastName || !email || !password) {
@@ -45,7 +46,7 @@ export default function RegisterScreen() {
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.inner}
       >
-        <ScrollView contentContainerStyle={styles.scrollContent}>
+        <ScrollView contentContainerStyle={styles.scrollContent} scrollEnabled={!isBusy}>
           <View style={styles.headerContainer}>
             <Typography.Header style={styles.title}>Create Account</Typography.Header>
             <Typography.Body style={styles.subtitle}>Join Spliteá and start splitting!</Typography.Body>
@@ -57,12 +58,14 @@ export default function RegisterScreen() {
               value={firstName}
               onChangeText={setFirstName}
               placeholder="John"
+              editable={!isBusy}
             />
             <Input
               label="Last Name"
               value={lastName}
               onChangeText={setLastName}
               placeholder="Doe"
+              editable={!isBusy}
             />
             <Input
               label="Email"
@@ -70,6 +73,7 @@ export default function RegisterScreen() {
               onChangeText={setEmail}
               placeholder="your@email.com"
               keyboardType="email-address"
+              editable={!isBusy}
             />
             <Input
               label="Password"
@@ -77,23 +81,26 @@ export default function RegisterScreen() {
               onChangeText={setPassword}
               placeholder="••••••••"
               secureTextEntry
+              editable={!isBusy}
             />
 
             <Button
               title={loading ? "Creating account..." : "Register"}
               onPress={handleRegister}
               style={styles.registerBtn}
+              disabled={isBusy}
             />
 
             <View style={styles.footer}>
               <Typography.Body style={styles.footerText}>Already have an account? </Typography.Body>
-              <TouchableOpacity onPress={() => router.push('/(auth)/login')}>
+              <TouchableOpacity onPress={() => router.push('/(auth)/login')} disabled={isBusy}>
                 <Typography.Body style={styles.linkText}>Login</Typography.Body>
               </TouchableOpacity>
             </View>
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
+      <BusyOverlay visible={isBusy} label="Creating account..." />
     </SafeAreaView>
   );
 }

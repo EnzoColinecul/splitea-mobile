@@ -1,13 +1,13 @@
-import { ArrowDownLeft, Bell } from 'lucide-react-native';
-import React, { useCallback, useEffect, useState } from 'react';
-import { ActivityIndicator, NativeScrollEvent, NativeSyntheticEvent, Platform, RefreshControl, SafeAreaView, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { Card, Typography } from '@/components/common/shared';
-import { Colors, Spacing } from '@/theme/theme';
 import apiClient from '@/api/api-client';
 import { expensesApi } from '@/api/expenses';
 import { notificationApi } from '@/api/notifications';
+import { Card, Typography } from '@/components/common/shared';
+import { Colors, Spacing } from '@/theme/theme';
 import { DashboardSummary, User } from '@/types';
 import { useRouter } from 'expo-router';
+import { ArrowDownLeft, Bell } from 'lucide-react-native';
+import React, { useCallback, useEffect, useState } from 'react';
+import { ActivityIndicator, NativeScrollEvent, NativeSyntheticEvent, Platform, RefreshControl, SafeAreaView, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 export default function DashboardScreen() {
   const router = useRouter();
@@ -120,7 +120,7 @@ export default function DashboardScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <ScrollView 
+      <ScrollView
         contentContainerStyle={styles.scrollContent}
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={Colors.primary} />
@@ -210,15 +210,10 @@ export default function DashboardScreen() {
             expenses.map((activity, idx) => {
               const amountOwed = activity.splits?.find((s: any) => s.user_id === user?.user_id)?.amount_owed || 0;
               const isPayer = activity.paid_by === user?.user_id;
-              
+
               return (
                 <View key={activity.expense_id || idx}>
                   <View style={styles.activityItem}>
-                    <View style={styles.avatarPlaceholder}>
-                      <Typography.Body style={{ fontWeight: 'bold', color: Colors.textSecondary }}>
-                        {(activity.title || 'E').charAt(0).toUpperCase()}
-                      </Typography.Body>
-                    </View>
                     <View style={styles.activityInfo}>
                       <Typography.Body style={styles.activityName}>{activity.title}</Typography.Body>
                       <Typography.Caption style={styles.activityDesc}>

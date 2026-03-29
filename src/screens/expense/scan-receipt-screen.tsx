@@ -1,12 +1,13 @@
+import { expensesApi } from '@/api/expenses';
+import { BusyOverlay, Button, Card, Typography } from '@/components/common/shared';
+import { BorderRadius, Colors, Spacing } from '@/theme/theme';
 import { RecordingPresets, requestRecordingPermissionsAsync, setAudioModeAsync, useAudioRecorder } from 'expo-audio';
 import { Image } from 'expo-image';
 import * as ImagePicker from 'expo-image-picker';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
-import * as SecureStore from 'expo-secure-store';
-import { Camera, ChevronLeft, Mic, Sparkles, Square } from 'lucide-react-native';
+import { Camera, CheckCircle2, ChevronLeft, Mic, RefreshCw, Sparkles, Square, Trash2 } from 'lucide-react-native';
 import React, { useState } from 'react';
 import {
-  ActivityIndicator,
   Alert,
   SafeAreaView,
   ScrollView,
@@ -17,11 +18,29 @@ import {
   View,
 } from 'react-native';
 import { v4 } from 'uuid';
-import { expensesApi } from '@/api/expenses';
-import { Button, Card, Typography } from '@/components/common/shared';
-import { BorderRadius, Colors, Spacing } from '@/theme/theme';
 
-const EXPO_API_URL = '/api';
+const AUDIO_MIME_TYPES: Record<string, string> = {
+  aac: 'audio/aac',
+  caf: 'audio/x-caf',
+  m4a: 'audio/mp4',
+  mp3: 'audio/mpeg',
+  mp4: 'audio/mp4',
+  opus: 'audio/opus',
+  wav: 'audio/wav',
+};
+
+const getAudioUploadMetadata = (uri: string) => {
+  const sanitizedUri = uri.split('?')[0];
+  const fileName = sanitizedUri.split('/').pop() || 'instruction-audio';
+  const fileExtension = fileName.includes('.')
+    ? fileName.split('.').pop()?.toLowerCase()
+    : undefined;
+
+  return {
+    fileName,
+    mimeType: fileExtension ? AUDIO_MIME_TYPES[fileExtension] || 'application/octet-stream' : 'application/octet-stream',
+  };
+};
 
 export default function ScanReceiptScreen() {
   const router = useRouter();
@@ -37,6 +56,7 @@ export default function ScanReceiptScreen() {
 
   const recorder = useAudioRecorder(RecordingPresets.HIGH_QUALITY);
   const [isRecording, setIsRecording] = useState(false);
+  const isBusy = loading;
 
   const parsedParticipantIds: string[] = participantIds ? JSON.parse(participantIds) : [];
 
@@ -55,8 +75,19 @@ export default function ScanReceiptScreen() {
     if (!result.canceled && result.assets.length > 0) setImageUri(result.assets[0].uri);
   };
 
+  const openReceiptSourcePicker = () => {
+    if (isBusy) return;
+
+    Alert.alert('Receipt Source', 'Choose how you want to add the receipt', [
+      { text: 'Camera', onPress: handleCameraCapture },
+      { text: 'Gallery', onPress: handlePickImage },
+      { text: 'Cancel', style: 'cancel' },
+    ]);
+  };
+
   const startRecording = async () => {
     try {
+      if (isBusy) return;
       const perm = await requestRecordingPermissionsAsync();
       if (perm.status !== 'granted') return;
       await setAudioModeAsync({ allowsRecording: true, playsInSilentMode: true, interruptionMode: 'doNotMix' });
@@ -78,19 +109,16 @@ export default function ScanReceiptScreen() {
       const uri = recorder.uri;
       if (!uri) throw new Error('No audio');
 
+      const { fileName, mimeType } = getAudioUploadMetadata(uri);
+
       const formData = new FormData();
-      formData.append('file', { uri, name: 'instruction.m4a', type: 'audio/m4a' } as any);
-      const token = await SecureStore.getItemAsync('userToken');
-      const response = await fetch(`${EXPO_API_URL}/transcribe`, {
-        method: 'POST',
-        body: formData,
-        headers: { 'Authorization': `Bearer ${token}` },
-      });
-      if (!response.ok) throw new Error('Transcription failed');
-      const data = await response.json();
+      formData.append('file', { uri, name: fileName, type: mimeType } as any);
+
+      const data = await expensesApi.transcribeInstruction(formData);
       setInstruction(prev => prev ? `${prev} ${data.transcription}` : data.transcription);
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
+      Alert.alert('Transcription Error', err?.message ?? 'Could not transcribe your audio.');
     } finally {
       setLoading(false);
       setLoadingStep('');
@@ -104,12 +132,7 @@ export default function ScanReceiptScreen() {
       setLoadingStep('Uploading receipt...');
       const eventId = v4();
       const filename = `receipt_${Date.now()}.jpg`;
-      const token = await SecureStore.getItemAsync('userToken');
-
-      const presignedResp = await fetch(`${EXPO_API_URL}/storage/presigned?event_id=${eventId}&filename=${filename}`, {
-        headers: { 'Authorization': `Bearer ${token}` },
-      });
-      const { upload_url, object_key } = await presignedResp.json();
+      const { upload_url, object_key } = await expensesApi.getPresignedUrl(eventId, filename);
 
       const blob = await (await fetch(imageUri)).blob();
       await fetch(upload_url, { method: 'PUT', body: blob, headers: { 'Content-Type': 'image/jpeg' } });
@@ -142,25 +165,46 @@ export default function ScanReceiptScreen() {
     <SafeAreaView style={styles.container}>
       <Stack.Screen options={{ headerShown: false }} />
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
+        <TouchableOpacity onPress={() => router.back()} style={styles.backBtn} disabled={isBusy}>
           <ChevronLeft size={28} color={Colors.text} />
         </TouchableOpacity>
         <Typography.SubHeader style={styles.headerTitle}>Scan Receipt</Typography.SubHeader>
         <View style={{ width: 44 }} />
       </View>
 
-      <ScrollView contentContainerStyle={styles.scroll}>
+      <ScrollView contentContainerStyle={styles.scroll} scrollEnabled={!isBusy}>
         <Typography.Header style={styles.mainTitle}>Let AI Handle The Math!</Typography.Header>
 
-        <TouchableOpacity onPress={imageUri ? handlePickImage : handleCameraCapture} style={styles.imageCard}>
+        <TouchableOpacity
+          onPress={!imageUri ? openReceiptSourcePicker : undefined}
+          style={[styles.imageCard, imageUri && styles.imageCardReady]}
+          disabled={isBusy || !!imageUri}
+        >
           {imageUri ? (
-            <Image source={{ uri: imageUri }} style={styles.preview} contentFit="cover" />
+            <View style={styles.readyState}>
+              <Image source={{ uri: imageUri }} style={styles.preview} contentFit="cover" />
+              <View style={styles.readyOverlay} />
+              <View style={styles.readyBadge}>
+                <CheckCircle2 size={18} color={Colors.secondary} />
+                <Typography.Body style={styles.readyTitle}>Receipt ready</Typography.Body>
+              </View>
+              <View style={styles.readyActions}>
+                <TouchableOpacity style={styles.readyActionBtn} onPress={() => setImageUri(null)} disabled={isBusy}>
+                  <Trash2 size={16} color={Colors.danger} />
+                  <Typography.Caption style={styles.removeActionText}>Remove</Typography.Caption>
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.readyActionBtn} onPress={openReceiptSourcePicker} disabled={isBusy}>
+                  <RefreshCw size={16} color={Colors.secondary} />
+                  <Typography.Caption style={styles.uploadAgainText}>Upload again</Typography.Caption>
+                </TouchableOpacity>
+              </View>
+            </View>
           ) : (
             <View style={styles.placeholder}>
               <View style={styles.cameraIconCircle}>
                 <Camera size={40} color={Colors.primary} />
               </View>
-              <Typography.Body style={styles.placeholderText}>Tap to take a photo of the receipt</Typography.Body>
+              <Typography.Body style={styles.placeholderText}>Tap to upload from gallery or take a photo</Typography.Body>
             </View>
           )}
         </TouchableOpacity>
@@ -174,10 +218,12 @@ export default function ScanReceiptScreen() {
             placeholder='e.g. "Burgers equal, drinks only Juan"'
             multiline
             placeholderTextColor="#A09787"
+            editable={!isBusy}
           />
           <TouchableOpacity
             onPress={isRecording ? stopRecording : startRecording}
             style={[styles.micBtn, isRecording && styles.micBtnActive]}
+            disabled={isBusy}
           >
             {isRecording ? <Square size={20} color="red" /> : <Mic size={20} color={Colors.text} />}
           </TouchableOpacity>
@@ -187,13 +233,6 @@ export default function ScanReceiptScreen() {
           <Sparkles size={16} color={Colors.primary} />
           <Typography.Caption style={styles.tipsText}>Specify names, percentages, or items</Typography.Caption>
         </View>
-
-        {loading && (
-          <View style={styles.loadingOverlay}>
-            <ActivityIndicator color={Colors.primary} size="large" />
-            <Text style={styles.loadingStep}>{loadingStep}</Text>
-          </View>
-        )}
       </ScrollView>
 
       {!loading && (
@@ -201,11 +240,13 @@ export default function ScanReceiptScreen() {
           <Button
             title="Analyze with AI"
             onPress={handleAnalyze}
-            disabled={!imageUri || !instruction.trim()}
+            disabled={isBusy || !imageUri || !instruction.trim()}
             style={[styles.analyzeBtn, (!imageUri || !instruction.trim()) && { opacity: 0.5 }]}
           />
         </View>
       )}
+
+      <BusyOverlay visible={isBusy} label={loadingStep} />
     </SafeAreaView>
   );
 }
@@ -230,10 +271,58 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: Spacing.xl,
   },
+  imageCardReady: {
+    borderColor: '#D1F3DB',
+    borderStyle: 'solid',
+    backgroundColor: '#F4FFF7',
+  },
   preview: { width: '100%', height: '100%' },
   placeholder: { alignItems: 'center', gap: Spacing.md },
   cameraIconCircle: { width: 80, height: 80, borderRadius: 40, backgroundColor: '#FFF9F4', justifyContent: 'center', alignItems: 'center' },
   placeholderText: { color: Colors.textSecondary, fontWeight: '600', textAlign: 'center' },
+  readyState: { width: '100%', height: '100%', justifyContent: 'space-between' },
+  readyOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(244, 255, 247, 0.18)',
+  },
+  readyBadge: {
+    position: 'absolute',
+    top: Spacing.md,
+    left: Spacing.md,
+    right: Spacing.md,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.sm,
+    borderRadius: BorderRadius.round,
+    backgroundColor: 'rgba(255,255,255,0.92)',
+    borderWidth: 1,
+    borderColor: '#D1F3DB',
+  },
+  readyTitle: { color: '#166534', fontWeight: '700' },
+  readyActions: {
+    position: 'absolute',
+    left: Spacing.md,
+    right: Spacing.md,
+    bottom: Spacing.md,
+    flexDirection: 'row',
+    gap: Spacing.sm,
+  },
+  readyActionBtn: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    paddingVertical: 10,
+    borderRadius: BorderRadius.round,
+    backgroundColor: 'rgba(255,255,255,0.94)',
+    borderWidth: 1,
+    borderColor: Colors.itemBorder,
+  },
+  removeActionText: { color: Colors.danger, fontWeight: '700' },
+  uploadAgainText: { color: '#166534', fontWeight: '700' },
 
   sectionTitle: { marginBottom: Spacing.sm, fontSize: 12, letterSpacing: 1.2, color: Colors.textSecondary, fontWeight: '700' },
   instructionCard: {
@@ -252,10 +341,6 @@ const styles = StyleSheet.create({
 
   tipsRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: Spacing.md },
   tipsText: { color: Colors.textSecondary, fontWeight: '600' },
-
-  loadingOverlay: { marginTop: Spacing.xl, alignItems: 'center', gap: Spacing.md },
-  loadingStep: { color: Colors.textSecondary, fontWeight: '700' },
-
   footer: { position: 'absolute', bottom: 0, left: 0, right: 0, padding: Spacing.xl, paddingBottom: Spacing.xl + 20, backgroundColor: 'rgba(255, 255, 255, 0.95)', borderTopWidth: 1, borderTopColor: Colors.itemBorder },
   analyzeBtn: { height: 56, borderRadius: BorderRadius.round },
 });

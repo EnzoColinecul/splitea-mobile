@@ -1,13 +1,13 @@
 import apiClient from '@/api/api-client';
 import { expensesApi } from '@/api/expenses';
 import { groupsApi } from '@/api/social';
-import { Button, Input, Typography } from '@/components/common/shared';
+import { BusyOverlay, Button, Input, Typography } from '@/components/common/shared';
 import { SplitAmount, SplitEditor } from '@/components/expenses/split-editor';
 import { BorderRadius, Colors, Spacing } from '@/theme/theme';
 import { SplitType, User } from '@/types';
 import * as ImagePicker from 'expo-image-picker';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
-import { Camera, ChevronLeft, ChevronRight, Info, Users } from 'lucide-react-native';
+import { Camera, CheckCircle2, ChevronLeft, ChevronRight, Info, Trash2, Users } from 'lucide-react-native';
 import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, SafeAreaView, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { v4 } from 'uuid';
@@ -18,13 +18,14 @@ export default function ExpenseDetailsScreen() {
     participants: string,
     groupId?: string,
     initialAmount?: string,
+    initialTitle?: string,
     receiptUrl?: string
   }>();
   const participants = params.participants ? JSON.parse(params.participants) : [];
   const [groupName, setGroupName] = useState<string | null>(null);
 
   const [currentUser, setCurrentUser] = useState<User | null>(null);
-  const [description, setDescription] = useState('');
+  const [description, setDescription] = useState(params.initialTitle || '');
   const [amount, setAmount] = useState(params.initialAmount || '');
   const [splitType, setSplitType] = useState<SplitType>(SplitType.EQUALLY);
   const [receiptUrl, setReceiptUrl] = useState<string | null>(params.receiptUrl || null);
@@ -32,6 +33,8 @@ export default function ExpenseDetailsScreen() {
   const [selectingPayer, setSelectingPayer] = useState(false);
   const [loading, setLoading] = useState(false);
   const [uploadingReceipt, setUploadingReceipt] = useState(false);
+  const [busyLabel, setBusyLabel] = useState('');
+  const isBusy = loading || uploadingReceipt;
 
   // For the segmented control appearance
   const [splits, setSplits] = useState<SplitAmount[]>([]);
@@ -63,16 +66,17 @@ export default function ExpenseDetailsScreen() {
   };
 
   const handlePickReceipt = async () => {
+    if (isBusy) return;
     Alert.alert('Attach Receipt', 'Choose a source', [
       {
-        text: 'Camera 📷',
+        text: 'Camera',
         onPress: async () => {
           const result = await ImagePicker.launchCameraAsync({ quality: 0.85 });
           if (!result.canceled && result.assets.length > 0) uploadReceipt(result.assets[0].uri);
         }
       },
       {
-        text: 'Gallery 🖼️',
+        text: 'Gallery',
         onPress: async () => {
           const result = await ImagePicker.launchImageLibraryAsync({ quality: 0.85 });
           if (!result.canceled && result.assets.length > 0) uploadReceipt(result.assets[0].uri);
@@ -85,6 +89,7 @@ export default function ExpenseDetailsScreen() {
   const uploadReceipt = async (uri: string) => {
     try {
       setUploadingReceipt(true);
+      setBusyLabel('Uploading receipt...');
       const eventId = v4();
       const filename = `receipt_manual_${Date.now()}.jpg`;
       const { upload_url, object_key } = await expensesApi.getPresignedUrl(eventId, filename);
@@ -96,6 +101,7 @@ export default function ExpenseDetailsScreen() {
       Alert.alert('Upload Error', 'Failed to upload the receipt.');
     } finally {
       setUploadingReceipt(false);
+      setBusyLabel('');
     }
   };
 
@@ -122,6 +128,7 @@ export default function ExpenseDetailsScreen() {
 
     setLoading(true);
     try {
+      setBusyLabel('Creating expense...');
       let apiSplits: any[] = [];
       if (splitType === SplitType.EQUALLY) {
         // Handle rounding to ensure sum = totalAmount
@@ -155,11 +162,12 @@ export default function ExpenseDetailsScreen() {
         receipt_url: receiptUrl || undefined
       });
 
-      Alert.alert('Success', 'Expense created!', [{ text: 'OK', onPress: () => router.replace('/(tabs)') }]);
+      router.replace('/(tabs)')
     } catch (err: any) {
       Alert.alert('Error', err?.message || 'Could not create expense');
     } finally {
       setLoading(false);
+      setBusyLabel('');
     }
   };
 
@@ -176,14 +184,14 @@ export default function ExpenseDetailsScreen() {
       <SafeAreaView style={styles.container}>
         <Stack.Screen options={{ headerShown: false }} />
         <View style={styles.header}>
-          <TouchableOpacity onPress={() => setSelectingPayer(false)} style={styles.backBtn}>
+          <TouchableOpacity onPress={() => setSelectingPayer(false)} style={styles.backBtn} disabled={isBusy}>
             <ChevronLeft size={28} color={Colors.text} />
           </TouchableOpacity>
           <Typography.SubHeader style={styles.headerTitle}>Select Payer</Typography.SubHeader>
           <View style={{ width: 44 }} />
         </View>
 
-        <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
+        <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false} scrollEnabled={!isBusy}>
           <Typography.SectionHeader>WHO PAID</Typography.SectionHeader>
           <View style={styles.payerList}>
             {payerOptions.map((participant: any) => {
@@ -195,9 +203,11 @@ export default function ExpenseDetailsScreen() {
                   key={participant.id}
                   activeOpacity={0.8}
                   onPress={() => {
+                    if (isBusy) return;
                     setPaidBy(participant.id);
                     setSelectingPayer(false);
                   }}
+                  disabled={isBusy}
                   style={[styles.payerOption, isSelected && styles.payerOptionSelected]}
                 >
                   <View style={styles.payerAvatar}>
@@ -222,6 +232,7 @@ export default function ExpenseDetailsScreen() {
             })}
           </View>
         </ScrollView>
+        <BusyOverlay visible={isBusy} label={busyLabel} />
       </SafeAreaView>
     );
   }
@@ -230,7 +241,7 @@ export default function ExpenseDetailsScreen() {
     <SafeAreaView style={styles.container}>
       <Stack.Screen options={{ headerShown: false }} />
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
+        <TouchableOpacity onPress={() => router.back()} style={styles.backBtn} disabled={isBusy}>
           <ChevronLeft size={28} color={Colors.text} />
         </TouchableOpacity>
         <Typography.SubHeader style={styles.headerTitle}>New Expense</Typography.SubHeader>
@@ -244,7 +255,7 @@ export default function ExpenseDetailsScreen() {
         </View>
       )}
 
-      <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
+      <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false} scrollEnabled={!isBusy}>
         {/* DETAILS Section */}
         <Typography.SectionHeader>1. EXPENSE DETAILS</Typography.SectionHeader>
         <Input
@@ -252,6 +263,7 @@ export default function ExpenseDetailsScreen() {
           placeholder="e.g. Pizza Night, Drinks..."
           value={description}
           onChangeText={setDescription}
+          editable={!isBusy}
         />
         <Input
           label="Amount ($)"
@@ -259,11 +271,12 @@ export default function ExpenseDetailsScreen() {
           value={amount}
           onChangeText={setAmount}
           keyboardType="numeric"
+          editable={!isBusy}
         />
 
         <Typography.SectionHeader style={{ marginTop: Spacing.xl }}>2. WHO PAID</Typography.SectionHeader>
         {selectedPayer ? (
-          <TouchableOpacity activeOpacity={0.8} style={styles.selectedPayerCard} onPress={() => setSelectingPayer(true)}>
+          <TouchableOpacity activeOpacity={0.8} style={styles.selectedPayerCard} onPress={() => setSelectingPayer(true)} disabled={isBusy}>
             <View style={styles.payerAvatar}>
               <Text style={styles.payerAvatarText}>
                 {selectedPayer.name?.charAt(0)?.toUpperCase() || '?'}
@@ -295,6 +308,7 @@ export default function ExpenseDetailsScreen() {
                 key={type}
                 style={[styles.pill, splitType === type && styles.pillActive]}
                 onPress={() => setSplitType(type)}
+                disabled={isBusy}
               >
                 <Text style={[styles.pillText, splitType === type && styles.pillTextActive]}>{label}</Text>
               </TouchableOpacity>
@@ -321,17 +335,19 @@ export default function ExpenseDetailsScreen() {
           style={styles.attachCard}
           onPress={handlePickReceipt}
           activeOpacity={0.7}
+          disabled={isBusy}
         >
           {uploadingReceipt ? (
             <ActivityIndicator color={Colors.primary} />
           ) : receiptUrl ? (
             <View style={styles.receiptPreviewContainer}>
-              <View style={styles.receiptIconCircle}>
-                <Camera size={20} color={Colors.primary} />
+              <View style={styles.receiptSuccessBadge}>
+                <CheckCircle2 size={18} color={Colors.secondary} />
+                <Typography.Body style={styles.receiptSuccessText}>Receipt ready</Typography.Body>
               </View>
-              <Typography.Body style={styles.receiptText}>Receipt attached successfully</Typography.Body>
-              <TouchableOpacity onPress={() => setReceiptUrl(null)}>
-                <Typography.Caption style={{ color: Colors.danger, fontWeight: '600' }}>Remove</Typography.Caption>
+              <TouchableOpacity style={styles.receiptRemoveBtn} onPress={() => setReceiptUrl(null)} disabled={isBusy}>
+                <Trash2 size={16} color={Colors.danger} />
+                <Typography.Caption style={styles.receiptRemoveText}>Remove</Typography.Caption>
               </TouchableOpacity>
             </View>
           ) : (
@@ -358,10 +374,11 @@ export default function ExpenseDetailsScreen() {
         <Button
           title={loading ? "Creating..." : "Confirm & Create"}
           onPress={handleCreate}
-          disabled={!description || !amount || loading || uploadingReceipt}
+          disabled={!description || !amount || isBusy}
           style={styles.createBtn}
         />
       </View>
+      <BusyOverlay visible={isBusy} label={busyLabel} />
     </SafeAreaView>
   );
 }
@@ -450,6 +467,33 @@ const styles = StyleSheet.create({
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: Spacing.md,
+  },
+  receiptSuccessBadge: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  receiptSuccessText: {
+    color: '#166534',
+    fontWeight: '700',
+  },
+  receiptRemoveBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: BorderRadius.round,
+    borderWidth: 1,
+    borderColor: '#F4D4CF',
+    backgroundColor: '#FFF8F7',
+  },
+  receiptRemoveText: {
+    color: Colors.danger,
+    fontWeight: '700',
   },
 
   infoBox: {

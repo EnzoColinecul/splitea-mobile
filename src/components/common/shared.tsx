@@ -1,5 +1,5 @@
 import React from 'react';
-import { StyleProp, StyleSheet, Text, TextInput, TextStyle, TouchableOpacity, View, ViewStyle } from 'react-native';
+import { ActivityIndicator, StyleProp, StyleSheet, Text, TextInput, TextStyle, TouchableOpacity, View, ViewStyle } from 'react-native';
 import { BorderRadius, Colors, Spacing } from '@/theme/theme';
 
 export const Button = ({ title, onPress, variant = 'primary', style, disabled }: { title: string, onPress: () => void, variant?: 'primary' | 'secondary' | 'outline' | 'danger', style?: StyleProp<ViewStyle>, disabled?: boolean }) => {
@@ -9,6 +9,7 @@ export const Button = ({ title, onPress, variant = 'primary', style, disabled }:
     variant === 'secondary' && styles.buttonSecondary,
     variant === 'outline' && styles.buttonOutline,
     variant === 'danger' && styles.buttonDanger,
+    disabled && styles.buttonDisabled,
     style
   ];
 
@@ -24,20 +25,34 @@ export const Button = ({ title, onPress, variant = 'primary', style, disabled }:
   );
 };
 
-export const Input = ({ value, onChangeText, placeholder, secureTextEntry, label, keyboardType }: { value: string, onChangeText: (text: string) => void, placeholder?: string, secureTextEntry?: boolean, label?: string, keyboardType?: 'default' | 'numeric' | 'email-address' | 'phone-pad' }) => (
+export const Input = ({ value, onChangeText, placeholder, secureTextEntry, label, keyboardType, editable = true }: { value: string, onChangeText: (text: string) => void, placeholder?: string, secureTextEntry?: boolean, label?: string, keyboardType?: 'default' | 'numeric' | 'email-address' | 'phone-pad', editable?: boolean }) => (
   <View style={styles.inputContainer}>
     {label && <Text style={styles.label}>{label}</Text>}
     <TextInput
-      style={styles.input}
+      style={[styles.input, !editable && styles.inputDisabled]}
       value={value}
       onChangeText={onChangeText}
       placeholder={placeholder}
       secureTextEntry={secureTextEntry}
       placeholderTextColor={Colors.textSecondary}
       keyboardType={keyboardType}
+      editable={editable}
     />
   </View>
 );
+
+export const BusyOverlay = ({ visible, label }: { visible: boolean, label?: string }) => {
+  if (!visible) return null;
+
+  return (
+    <View style={styles.busyOverlay}>
+      <View style={styles.busyCard}>
+        <ActivityIndicator size="large" color={Colors.primary} />
+        {label ? <Text style={styles.busyText}>{label}</Text> : null}
+      </View>
+    </View>
+  );
+};
 
 export const Card = ({ children, style }: { children: React.ReactNode, style?: StyleProp<ViewStyle> }) => (
   <View style={[styles.card, style]}>
@@ -65,6 +80,7 @@ const styles = StyleSheet.create({
   buttonSecondary: { backgroundColor: Colors.secondary },
   buttonOutline: { backgroundColor: 'transparent', borderWidth: 1, borderColor: Colors.primary },
   buttonDanger: { backgroundColor: Colors.danger },
+  buttonDisabled: { opacity: 0.55 },
   buttonText: { color: Colors.white, fontWeight: '700', fontSize: 16 },
 
   inputContainer: { marginBottom: Spacing.md, width: '100%' },
@@ -77,6 +93,9 @@ const styles = StyleSheet.create({
     padding: Spacing.md,
     fontSize: 16,
     color: Colors.text,
+  },
+  inputDisabled: {
+    opacity: 0.65,
   },
 
   card: {
@@ -92,4 +111,28 @@ const styles = StyleSheet.create({
   body: { fontSize: 16, color: Colors.text },
   caption: { fontSize: 14, color: Colors.textSecondary },
   sectionHeader: { fontSize: 13, fontWeight: '700', color: Colors.textSecondary, marginBottom: Spacing.sm, letterSpacing: 0.5 },
+  busyOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(255, 255, 255, 0.72)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 100,
+    elevation: 12,
+  },
+  busyCard: {
+    minWidth: 150,
+    paddingHorizontal: Spacing.xl,
+    paddingVertical: Spacing.lg,
+    borderRadius: BorderRadius.card,
+    backgroundColor: 'rgba(255,255,255,0.95)',
+    borderWidth: 1.5,
+    borderColor: Colors.itemBorder,
+    alignItems: 'center',
+    gap: Spacing.md,
+  },
+  busyText: {
+    color: Colors.text,
+    fontWeight: '700',
+    textAlign: 'center',
+  },
 });

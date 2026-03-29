@@ -3,7 +3,7 @@ import { CheckCircle, ChevronLeft } from 'lucide-react-native';
 import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, SafeAreaView, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { friendsApi, groupsApi } from '@/api/social';
-import { Button, Typography } from '@/components/common/shared';
+import { BusyOverlay, Button, Typography } from '@/components/common/shared';
 import { Colors, Spacing } from '@/theme/theme';
 import { Friend } from '@/types';
 
@@ -16,6 +16,7 @@ export default function CreateGroupScreen() {
   const [selectedFriendIds, setSelectedFriendIds] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState(false);
+  const isBusy = creating;
 
   useEffect(() => {
     fetchFriends();
@@ -34,6 +35,7 @@ export default function CreateGroupScreen() {
   };
 
   const toggleFriend = (userId: string) => {
+    if (isBusy) return;
     setSelectedFriendIds(prev =>
       prev.includes(userId) ? prev.filter(id => id !== userId) : [...prev, userId]
     );
@@ -68,14 +70,14 @@ export default function CreateGroupScreen() {
     <SafeAreaView style={styles.container}>
       <Stack.Screen options={{ headerShown: false }} />
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
+        <TouchableOpacity onPress={() => router.back()} style={styles.backBtn} disabled={isBusy}>
           <ChevronLeft size={28} color={Colors.text} />
         </TouchableOpacity>
         <Typography.SubHeader style={styles.headerTitle}>New Group</Typography.SubHeader>
         <View style={{ width: 44 }} />
       </View>
 
-      <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
+      <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled" scrollEnabled={!isBusy}>
         <View style={styles.section}>
           <Typography.Header style={styles.mainTitle}>Create Group</Typography.Header>
 
@@ -87,6 +89,7 @@ export default function CreateGroupScreen() {
               value={name}
               onChangeText={setName}
               placeholderTextColor={Colors.textSecondary}
+              editable={!isBusy}
             />
           </View>
 
@@ -99,6 +102,7 @@ export default function CreateGroupScreen() {
               onChangeText={setDescription}
               multiline
               placeholderTextColor={Colors.textSecondary}
+              editable={!isBusy}
             />
           </View>
         </View>
@@ -118,6 +122,7 @@ export default function CreateGroupScreen() {
                   key={friend.user_id}
                   style={[styles.friendItem, isSelected && styles.friendSelected]}
                   onPress={() => toggleFriend(friend.user_id)}
+                  disabled={isBusy}
                 >
                   <View style={styles.avatar}>
                     <Text style={styles.avatarText}>{friend.first_name.charAt(0)}</Text>
@@ -142,6 +147,7 @@ export default function CreateGroupScreen() {
           style={styles.createBtn}
         />
       </View>
+      <BusyOverlay visible={isBusy} label="Creating group..." />
     </SafeAreaView>
   );
 }
