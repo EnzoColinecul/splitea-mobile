@@ -5,9 +5,9 @@ import { Card, Typography } from '@/components/common/shared';
 import { Colors, Spacing } from '@/theme/theme';
 import { DashboardSummary, User } from '@/types';
 import { useRouter } from 'expo-router';
-import { ArrowDownLeft, Bell } from 'lucide-react-native';
+import { ArrowDownLeft, ArrowUpRight, Bell, Wallet } from 'lucide-react-native';
 import React, { useCallback, useEffect, useState } from 'react';
-import { ActivityIndicator, NativeScrollEvent, NativeSyntheticEvent, Platform, RefreshControl, SafeAreaView, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, NativeScrollEvent, NativeSyntheticEvent, Platform, RefreshControl, SafeAreaView, ScrollView, StyleSheet, Text, TouchableOpacity, useWindowDimensions, View } from 'react-native';
 
 export default function DashboardScreen() {
   const router = useRouter();
@@ -18,6 +18,8 @@ export default function DashboardScreen() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [activeBalanceCard, setActiveBalanceCard] = useState(0);
+  const { width: windowWidth } = useWindowDimensions();
+  const cardWidth = windowWidth - (Spacing.xl * 2);
 
   useEffect(() => {
     fetchData();
@@ -86,33 +88,33 @@ export default function DashboardScreen() {
   const balanceCards = [
     {
       key: 'net',
-      label: 'Net balance',
+      label: 'Net Balance',
       amount: mainBalance,
-      color: Colors.primary,
+      color: '#FF7A00', // Primary Orange
       caption: balanceLabel,
-      bg: '#F8FAFC',
+      icon: Wallet,
     },
     {
       key: 'owed',
-      label: 'You are owed',
+      label: 'You are Owed',
       amount: totalPaid,
-      color: Colors.secondary,
-      caption: 'Across all shared expenses',
-      bg: '#F4FAEC',
+      color: '#4CAF50', // Success Green
+      caption: 'Collect from friends',
+      icon: ArrowDownLeft,
     },
     {
       key: 'owe',
-      label: 'You owe',
+      label: 'You Owe',
       amount: totalOwed,
-      color: Colors.danger,
-      caption: 'Pending payments to settle',
-      bg: '#FFF4F2',
+      color: '#E53935', // Danger Red
+      caption: 'Settle soon to stay even',
+      icon: ArrowUpRight,
     },
   ];
 
+
   const handleBalanceScroll = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
-    const cardWidth = 320;
-    const nextIndex = Math.round(event.nativeEvent.contentOffset.x / cardWidth);
+    const nextIndex = Math.round(event.nativeEvent.contentOffset.x / (cardWidth + Spacing.md));
     if (nextIndex !== activeBalanceCard) {
       setActiveBalanceCard(nextIndex);
     }
@@ -147,10 +149,9 @@ export default function DashboardScreen() {
         <View style={styles.balanceSection}>
           <ScrollView
             horizontal
-            pagingEnabled
             decelerationRate="fast"
             showsHorizontalScrollIndicator={false}
-            snapToInterval={320}
+            snapToInterval={cardWidth + Spacing.md}
             snapToAlignment="start"
             contentContainerStyle={styles.balanceScrollContent}
             onMomentumScrollEnd={handleBalanceScroll}
@@ -160,24 +161,33 @@ export default function DashboardScreen() {
                 key={card.key}
                 style={[
                   styles.summaryCard,
-                  { backgroundColor: card.bg, marginRight: index === balanceCards.length - 1 ? 0 : Spacing.md },
+                  { width: cardWidth, marginRight: index === balanceCards.length - 1 ? 0 : Spacing.md },
                 ]}
               >
+                {/* Accent Pill */}
+                <View style={[styles.accentPill, { backgroundColor: card.color }]} />
+
                 <View style={styles.cardHeader}>
-                  <View style={[styles.iconCircle, { backgroundColor: `${card.color}20` }]}>
-                    <ArrowDownLeft size={16} color={card.color} />
+                  <View style={[styles.iconCircleMinimal, { backgroundColor: `${card.color}15` }]}>
+                    <card.icon size={20} color={card.color} strokeWidth={2.5} />
                   </View>
                   <Typography.Body style={styles.cardHeaderText}>{card.label}</Typography.Body>
                 </View>
-                <Text
-                  adjustsFontSizeToFit
-                  minimumFontScale={0.55}
-                  numberOfLines={1}
-                  style={[styles.amountText, { color: card.color }]}
-                >
-                  {formatCurrency(card.amount)}
-                </Text>
-                <Typography.Caption style={styles.cardFooterText}>{card.caption}</Typography.Caption>
+
+                <View style={styles.amountContainer}>
+                  <Text
+                    adjustsFontSizeToFit
+                    minimumFontScale={0.5}
+                    numberOfLines={1}
+                    style={styles.amountText}
+                  >
+                    {formatCurrency(card.amount)}
+                  </Text>
+                </View>
+
+                <View style={styles.cardFooter}>
+                  <Typography.Caption style={styles.cardFooterText}>{card.caption}</Typography.Caption>
+                </View>
               </Card>
             ))}
           </ScrollView>
@@ -188,7 +198,7 @@ export default function DashboardScreen() {
                 key={card.key}
                 style={[
                   styles.balanceDot,
-                  index === activeBalanceCard && styles.balanceDotActive,
+                  index === activeBalanceCard ? styles.balanceDotActive : { backgroundColor: '#E2E8F0' }
                 ]}
               />
             ))}
@@ -246,7 +256,7 @@ export default function DashboardScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: Colors.background },
+  container: { flex: 1, backgroundColor: '#F8FAFC' }, // Very light slate/blue hint for contrast
   scrollContent: { padding: Spacing.xl, paddingTop: Platform.OS === 'ios' ? 10 : 40 },
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: Spacing.xl },
   logoText: { color: Colors.primary, fontSize: 28, fontWeight: '900', marginBottom: 0 },
@@ -257,17 +267,48 @@ const styles = StyleSheet.create({
   greetingContainer: { marginBottom: Spacing.lg },
   greetingTitle: { fontSize: 26, fontWeight: '800', marginBottom: 4 },
   greetingSubtitle: { color: Colors.textSecondary, fontSize: 16 },
-  balanceSection: { marginBottom: Spacing.xl },
-  balanceScrollContent: { paddingRight: 4 },
-  summaryCard: { width: 304, padding: Spacing.xl, borderRadius: 24, borderWidth: 1.5, borderColor: Colors.itemBorder },
-  cardHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: Spacing.md },
-  iconCircle: { width: 28, height: 28, borderRadius: 14, backgroundColor: '#E0E7FF', justifyContent: 'center', alignItems: 'center', marginRight: Spacing.sm },
-  cardHeaderText: { color: Colors.textSecondary, fontWeight: '600' },
-  amountText: { color: Colors.primary, fontSize: 40, fontWeight: '900', marginBottom: 8 },
-  cardFooterText: { color: Colors.textSecondary, fontSize: 15 },
-  balanceDots: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 10, marginTop: Spacing.md },
-  balanceDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: '#D6D3D1' },
-  balanceDotActive: { width: 22, backgroundColor: Colors.text },
+  balanceSection: { marginBottom: Spacing.md },
+  balanceScrollContent: { paddingRight: Spacing.xl, paddingVertical: Spacing.lg }, // Added vertical padding for shadow room
+  summaryCard: {
+    height: 170,
+    padding: Spacing.xl,
+    borderRadius: 24,
+    backgroundColor: Colors.white,
+    justifyContent: 'space-between',
+    borderWidth: 0,
+    shadowColor: '#000',
+    shadowOffset: { width: 5, height: 12 },
+    shadowOpacity: 0.20,
+    shadowRadius: 1.2,
+    elevation: 12,
+    position: 'relative',
+    overflow: 'visible', // Explicitly allow shadow flow
+  },
+  accentPill: {
+    position: 'absolute',
+    left: 0,
+    top: Spacing.xl,
+    bottom: Spacing.xl,
+    width: 4,
+    borderTopRightRadius: 4,
+    borderBottomRightRadius: 4,
+  },
+  cardHeader: { flexDirection: 'row', alignItems: 'center', gap: Spacing.md },
+  iconCircleMinimal: {
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    justifyContent: 'center',
+    alignItems: 'center'
+  },
+  cardHeaderText: { color: Colors.textSecondary, fontWeight: '700', fontSize: 13, textTransform: 'uppercase', letterSpacing: 0.8 },
+  amountContainer: { marginVertical: Spacing.xs },
+  amountText: { color: Colors.text, fontSize: 40, fontWeight: '800', letterSpacing: -1 },
+  cardFooter: { borderTopWidth: 1, borderTopColor: '#F8FAFC', paddingTop: Spacing.sm },
+  cardFooterText: { color: Colors.textSecondary, fontSize: 14, fontWeight: '500' },
+  balanceDots: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 8, marginTop: Spacing.lg },
+  balanceDot: { width: 8, height: 8, borderRadius: 4 },
+  balanceDotActive: { width: 20, height: 8, backgroundColor: Colors.text },
   recentHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: Spacing.lg },
   recentTitle: { fontSize: 18, color: Colors.textSecondary, marginBottom: 0 },
   seeAll: { color: Colors.primary, fontWeight: '700' },

@@ -7,10 +7,12 @@ import { BorderRadius, Colors, Spacing } from '@/theme/theme';
 import { SplitType, User } from '@/types';
 import * as ImagePicker from 'expo-image-picker';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
-import { Camera, CheckCircle2, ChevronLeft, ChevronRight, Info, Trash2, Users } from 'lucide-react-native';
+import { Camera, CheckCircle2, ChevronLeft, ChevronRight, CreditCard, Info, Trash2, Users } from 'lucide-react-native';
 import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, SafeAreaView, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { v4 } from 'uuid';
+import { GlobalEvents } from '@/utils/events';
+import { DeviceEventEmitter } from 'react-native';
 
 export default function ExpenseDetailsScreen() {
   const router = useRouter();
@@ -29,6 +31,7 @@ export default function ExpenseDetailsScreen() {
   const [amount, setAmount] = useState(params.initialAmount || '');
   const [splitType, setSplitType] = useState<SplitType>(SplitType.EQUALLY);
   const [receiptUrl, setReceiptUrl] = useState<string | null>(params.receiptUrl || null);
+  const [currency, setCurrency] = useState('ARS');
   const [paidBy, setPaidBy] = useState('');
   const [selectingPayer, setSelectingPayer] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -44,6 +47,12 @@ export default function ExpenseDetailsScreen() {
     if (params.groupId) {
       fetchGroupName(params.groupId);
     }
+
+    const sub = DeviceEventEmitter.addListener(GlobalEvents.CURRENCY_SELECTED, (code: string) => {
+      setCurrency(code);
+    });
+
+    return () => sub.remove();
   }, []);
 
   const fetchGroupName = async (id: string) => {
@@ -60,6 +69,7 @@ export default function ExpenseDetailsScreen() {
       const res = await apiClient.get('/user/profile');
       setCurrentUser(res.data);
       setPaidBy(res.data.user_id);
+      setCurrency(res.data.preferred_currency || 'ARS');
     } catch (err) {
       console.error('Failed to get user profile', err);
     }
@@ -159,6 +169,7 @@ export default function ExpenseDetailsScreen() {
         group_id: params.groupId || undefined,
         split_type: backendSplitType,
         splits: apiSplits,
+        currency: currency,
         receipt_url: receiptUrl || undefined
       });
 
@@ -266,13 +277,29 @@ export default function ExpenseDetailsScreen() {
           editable={!isBusy}
         />
         <Input
-          label="Amount ($)"
+          label={`Amount (${currency})`}
           placeholder="0.00"
           value={amount}
           onChangeText={setAmount}
           keyboardType="numeric"
           editable={!isBusy}
         />
+
+        <TouchableOpacity
+          style={styles.currencySelector}
+          activeOpacity={0.7}
+          onPress={() => router.push({ pathname: '/currency-picker', params: { current: currency } })}
+          disabled={isBusy}
+        >
+          <View style={styles.currencyIcon}>
+            <CreditCard size={18} color={Colors.textSecondary} />
+          </View>
+          <View style={styles.currencyInfo}>
+            <Typography.Body style={styles.currencyLabel}>Currency</Typography.Body>
+            <Typography.Body style={styles.currencyValue}>{currency}</Typography.Body>
+          </View>
+          <ChevronRight size={18} color={Colors.textSecondary} />
+        </TouchableOpacity>
 
         <Typography.SectionHeader style={{ marginTop: Spacing.xl }}>2. WHO PAID</Typography.SectionHeader>
         {selectedPayer ? (
@@ -582,6 +609,41 @@ const styles = StyleSheet.create({
   payerRadioSelected: {
     borderColor: Colors.primary,
     backgroundColor: Colors.primary,
+  },
+  currencySelector: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: Spacing.md,
+    backgroundColor: '#F9FAFB',
+    borderRadius: BorderRadius.lg,
+    borderWidth: 1.5,
+    borderColor: Colors.itemBorder,
+    marginTop: -Spacing.xs,
+    marginBottom: Spacing.md,
+  },
+  currencyIcon: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: '#F3F4F6',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: Spacing.sm,
+  },
+  currencyInfo: {
+    flex: 1,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingRight: Spacing.md,
+  },
+  currencyLabel: {
+    fontWeight: '700',
+    color: Colors.textSecondary,
+    fontSize: 14,
+  },
+  currencyValue: {
+    fontWeight: '700',
+    color: Colors.primary,
   },
 
   footer: {

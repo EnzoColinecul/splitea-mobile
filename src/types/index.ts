@@ -4,6 +4,8 @@ export interface User {
   first_name: string;
   last_name: string;
   created_at: string;
+  preferred_currency: string;
+  language: string;
 }
 
 export interface AuthResponse {
@@ -14,8 +16,10 @@ export interface AuthResponse {
 }
 
 export interface UserUpdate {
-  first_name: string;
-  last_name: string;
+  first_name?: string;
+  last_name?: string;
+  preferred_currency?: string;
+  language?: string;
 }
 
 export interface Group {

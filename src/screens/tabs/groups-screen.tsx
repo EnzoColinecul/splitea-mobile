@@ -1,4 +1,4 @@
-import { Plus, Users } from 'lucide-react-native';
+import { ChevronRight, Plus, Users } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 import React, { useEffect, useState, useCallback } from 'react';
 import { ActivityIndicator, FlatList, RefreshControl, SafeAreaView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
@@ -34,14 +34,16 @@ export default function GroupsScreen() {
     fetchGroups();
   }, []);
 
-  const renderGroupItem = ({ item }: { item: Group }) => (
-    <TouchableOpacity 
-      activeOpacity={0.7} 
-      onPress={() => router.push({ pathname: '/group-detail' as never, params: { groupId: item.group_id } } as never)}
-    >
-      <Card style={styles.groupCard}>
+  const renderGroupItem = ({ item, index }: { item: Group; index: number }) => {
+    const isLast = index === groups.length - 1;
+    return (
+      <TouchableOpacity 
+        activeOpacity={0.75} 
+        onPress={() => router.push({ pathname: '/group-detail' as never, params: { groupId: item.group_id } } as never)}
+        style={[styles.listItem, !isLast && styles.listItemBorder]}
+      >
         <View style={styles.groupInfo}>
-          <View style={[styles.avatar, { backgroundColor: '#EEF2FF' }]}>
+          <View style={styles.avatar}>
             <Text style={styles.avatarText}>{item.name.charAt(0).toUpperCase()}</Text>
           </View>
           <View style={styles.textContainer}>
@@ -56,10 +58,11 @@ export default function GroupsScreen() {
         </View>
         <View style={styles.balanceContainer}>
           <Typography.Caption style={styles.balanceLabel}>Balanced</Typography.Caption>
+          <ChevronRight size={16} color={Colors.textSecondary} style={{ marginLeft: 4 }} />
         </View>
-      </Card>
-    </TouchableOpacity>
-  );
+      </TouchableOpacity>
+    );
+  };
 
   return (
     <SafeAreaView style={styles.container}>
@@ -118,32 +121,36 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   createBtnText: { color: Colors.white, fontWeight: '700', fontSize: 14 },
-  list: { padding: Spacing.lg },
-  groupCard: {
-    marginBottom: Spacing.md,
+  list: { paddingHorizontal: Spacing.lg, paddingBottom: 40 },
+  listItem: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    padding: Spacing.md,
+    paddingVertical: Spacing.lg,
+  },
+  listItemBorder: {
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.itemBorder,
   },
   groupInfo: { flexDirection: 'row', alignItems: 'center', flex: 1 },
   avatar: { 
-    width: 50, 
-    height: 50, 
-    borderRadius: 25, 
+    width: 60, 
+    height: 60, 
+    borderRadius: 30, 
+    backgroundColor: '#EEF2FF', 
     justifyContent: 'center', 
     alignItems: 'center',
     marginRight: Spacing.md,
-    borderWidth: 1.5,
+    borderWidth: 1,
     borderColor: Colors.itemBorder
   },
-  avatarText: { fontWeight: '700', fontSize: 20, color: Colors.primary },
-  textContainer: { flex: 1 },
-  groupName: { fontWeight: '700', fontSize: 17, color: Colors.text, marginBottom: 2 },
+  avatarText: { fontWeight: '800', fontSize: 22, color: Colors.primary },
+  textContainer: { flex: 1, gap: 2 },
+  groupName: { fontWeight: '800', fontSize: 18, color: Colors.text },
   memberRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   memberCount: { fontSize: 13, color: Colors.textSecondary },
-  balanceContainer: { alignItems: 'flex-end' },
-  balanceLabel: { fontSize: 12, color: Colors.textSecondary, fontWeight: '600' },
+  balanceContainer: { flexDirection: 'row', alignItems: 'center' },
+  balanceLabel: { fontSize: 13, color: Colors.textSecondary, fontWeight: '600' },
 
   center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   emptyState: { padding: 60, alignItems: 'center', justifyContent: 'center' },

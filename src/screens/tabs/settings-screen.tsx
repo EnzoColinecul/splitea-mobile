@@ -24,17 +24,17 @@ const SETTINGS_ITEMS: SettingsItem[] = [
     title: 'Profile settings',
     subtitle: 'Manage your name and account details',
     icon: UserCircle2,
-    tint: '#FFF2E6',
-    iconColor: Colors.primary,
-    route: '/profile',
+    tint: '#F3F4F6',
+    iconColor: Colors.text,
+    route: '/profile-settings',
   },
   {
     key: 'notifications',
     title: 'Notifications',
     subtitle: 'Review alerts and reminders',
     icon: Bell,
-    tint: '#EEF6FF',
-    iconColor: '#2563EB',
+    tint: '#F3F4F6',
+    iconColor: Colors.text,
     route: '/notifications',
   },
   {
@@ -42,16 +42,16 @@ const SETTINGS_ITEMS: SettingsItem[] = [
     title: 'Payment methods',
     subtitle: 'Coming soon for settle up flows',
     icon: CreditCard,
-    tint: '#F4FAEC',
-    iconColor: Colors.secondary,
+    tint: '#F3F4F6',
+    iconColor: Colors.text,
   },
   {
     key: 'privacy',
     title: 'Privacy & security',
     subtitle: 'Sign-in and account protection',
     icon: ShieldCheck,
-    tint: '#FFF7ED',
-    iconColor: Colors.primaryDark,
+    tint: '#F3F4F6',
+    iconColor: Colors.text,
   },
 ];
 
@@ -114,7 +114,7 @@ export default function SettingsScreen() {
           <Typography.Caption style={styles.subtitle}>Account, notifications, and app preferences.</Typography.Caption>
         </View>
 
-        <Card style={styles.profileCard}>
+        <View style={styles.profileSection}>
           {loading ? (
             <View style={styles.loadingRow}>
               <ActivityIndicator size="small" color={Colors.primary} />
@@ -125,7 +125,7 @@ export default function SettingsScreen() {
               <View style={styles.avatar}>
                 <Typography.Body style={styles.avatarText}>{initials}</Typography.Body>
               </View>
-
+ 
               <View style={styles.profileInfo}>
                 <Typography.Body style={styles.profileName}>
                   {user ? `${user.first_name} ${user.last_name}` : 'Your account'}
@@ -134,50 +134,46 @@ export default function SettingsScreen() {
               </View>
             </View>
           )}
-        </Card>
+        </View>
 
         <View style={styles.list}>
-          {SETTINGS_ITEMS.map((item) => {
+          {SETTINGS_ITEMS.map((item, index) => {
             const Icon = item.icon;
+            const isLast = index === SETTINGS_ITEMS.length - 1;
             return (
               <TouchableOpacity
                 key={item.key}
-                activeOpacity={item.route ? 0.8 : 1}
+                activeOpacity={item.route ? 0.7 : 1}
                 onPress={() => handlePressItem(item.route)}
                 disabled={!item.route || isBusy}
+                style={[styles.listItem, !isLast && styles.listItemBorder]}
               >
-                <Card style={styles.optionCard}>
-                  <View style={[styles.optionIcon, { backgroundColor: item.tint }]}>
-                    <Icon size={20} color={item.iconColor} />
-                  </View>
-
-                  <View style={styles.optionBody}>
-                    <Typography.Body style={styles.optionTitle}>{item.title}</Typography.Body>
-                    <Typography.Caption style={styles.optionSubtitle}>{item.subtitle}</Typography.Caption>
-                  </View>
-
-                  <ChevronRight size={18} color={item.route ? Colors.textSecondary : '#D1D5DB'} />
-                </Card>
+                <View style={styles.optionIcon}>
+                  <Icon size={22} color={item.iconColor} />
+                </View>
+ 
+                <View style={styles.optionBody}>
+                  <Typography.Body style={styles.optionTitle}>{item.title}</Typography.Body>
+                  <Typography.Caption style={styles.optionSubtitle}>{item.subtitle}</Typography.Caption>
+                </View>
+ 
+                {item.route && <ChevronRight size={18} color={Colors.textSecondary} />}
               </TouchableOpacity>
             );
           })}
         </View>
 
         <TouchableOpacity activeOpacity={0.85} onPress={handleSignOut} disabled={signingOut}>
-          <Card style={styles.signOutCard}>
-            <View style={styles.signOutIcon}>
-              {signingOut ? (
-                <ActivityIndicator size="small" color={Colors.danger} />
-              ) : (
-                <LogOut size={20} color={Colors.danger} />
-              )}
-            </View>
-
-            <View style={styles.optionBody}>
-              <Typography.Body style={styles.signOutTitle}>{signingOut ? 'Signing out…' : 'Log out'}</Typography.Body>
-              <Typography.Caption style={styles.signOutSubtitle}>You will need to sign in again on this device.</Typography.Caption>
-            </View>
-          </Card>
+          <View style={styles.signOutButton}>
+            {signingOut ? (
+              <ActivityIndicator size="small" color={Colors.white} />
+            ) : (
+              <LogOut size={20} color={Colors.white} />
+            )}
+            <Typography.Body style={styles.signOutButtonText}>
+              {signingOut ? 'Signing out…' : 'Log out'}
+            </Typography.Body>
+          </View>
         </TouchableOpacity>
       </ScrollView>
       <BusyOverlay visible={isBusy} label="Signing out..." />
@@ -197,20 +193,22 @@ const styles = StyleSheet.create({
   },
   headerRow: {
     gap: Spacing.xs,
+    marginBottom: Spacing.md,
   },
   title: {
-    fontSize: 28,
+    fontSize: 32,
     fontWeight: '800',
     color: Colors.text,
     marginBottom: 0,
   },
   subtitle: {
     color: Colors.textSecondary,
-    fontSize: 15,
+    fontSize: 16,
   },
-  profileCard: {
-    padding: Spacing.lg,
-    backgroundColor: '#FFF9F4',
+  profileSection: {
+    paddingVertical: Spacing.lg,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.itemBorder,
   },
   loadingRow: {
     flexDirection: 'row',
@@ -226,82 +224,84 @@ const styles = StyleSheet.create({
     gap: Spacing.md,
   },
   avatar: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    backgroundColor: '#FFF2E6',
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    backgroundColor: '#F3F4F6',
     justifyContent: 'center',
     alignItems: 'center',
+    borderWidth: 1,
+    borderColor: Colors.itemBorder,
   },
   avatarText: {
-    color: Colors.primary,
-    fontSize: 20,
+    color: Colors.text,
+    fontSize: 22,
     fontWeight: '800',
   },
   profileInfo: {
     flex: 1,
-    gap: 4,
+    gap: 2,
   },
   profileName: {
     fontWeight: '800',
-    fontSize: 18,
+    fontSize: 20,
     color: Colors.text,
   },
   profileEmail: {
     color: Colors.textSecondary,
+    fontSize: 14,
   },
   list: {
-    gap: Spacing.md,
+    marginTop: Spacing.sm,
   },
-  optionCard: {
+  listItem: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: Spacing.md,
-    padding: Spacing.lg,
+    paddingVertical: Spacing.lg,
+  },
+  listItemBorder: {
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.itemBorder,
   },
   optionIcon: {
-    width: 46,
-    height: 46,
-    borderRadius: BorderRadius.lg,
+    width: 40,
+    height: 40,
     justifyContent: 'center',
     alignItems: 'center',
   },
   optionBody: {
     flex: 1,
-    gap: 4,
+    gap: 2,
   },
   optionTitle: {
     fontWeight: '700',
-    fontSize: 16,
+    fontSize: 17,
     color: Colors.text,
   },
   optionSubtitle: {
     color: Colors.textSecondary,
-    lineHeight: 18,
+    fontSize: 14,
+    lineHeight: 20,
   },
-  signOutCard: {
+  signOutButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: Spacing.md,
-    padding: Spacing.lg,
-    borderColor: '#F4D4CF',
-    backgroundColor: '#FFF8F7',
-  },
-  signOutIcon: {
-    width: 46,
-    height: 46,
-    borderRadius: BorderRadius.lg,
-    backgroundColor: '#FDECEA',
     justifyContent: 'center',
-    alignItems: 'center',
+    gap: Spacing.sm,
+    padding: Spacing.lg,
+    backgroundColor: Colors.danger,
+    borderRadius: BorderRadius.card,
+    marginTop: Spacing.xl,
+    shadowColor: Colors.danger,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 4,
   },
-  signOutTitle: {
+  signOutButtonText: {
     fontWeight: '700',
     fontSize: 16,
-    color: Colors.danger,
-  },
-  signOutSubtitle: {
-    color: Colors.textSecondary,
-    lineHeight: 18,
+    color: Colors.white,
   },
 });

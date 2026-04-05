@@ -230,7 +230,8 @@ export default function ExpenseMethodScreen() {
                     <TouchableOpacity
                       style={[
                         styles.itemRow,
-                        isSelected && styles.itemRowSelected
+                        isSelected && styles.itemRowSelected,
+                        isSelected && { borderBottomLeftRadius: 0, borderBottomRightRadius: 0 }
                       ]}
                       onPress={() => selectGroup(group.group_id)}
                     >
@@ -397,17 +398,15 @@ const styles = StyleSheet.create({
     borderColor: Colors.itemBorder,
   },
   itemRowSelected: {
-    borderColor: Colors.primary,
+    borderColor: Colors.itemBorder,
     backgroundColor: '#FFF9F4',
-    borderBottomLeftRadius: 0,
-    borderBottomRightRadius: 0,
   },
   participantsContainer: {
     backgroundColor: Colors.white,
     borderLeftWidth: 1.5,
     borderRightWidth: 1.5,
     borderBottomWidth: 1.5,
-    borderColor: Colors.primary,
+    borderColor: Colors.itemBorder,
     borderBottomLeftRadius: 24,
     borderBottomRightRadius: 24,
     paddingHorizontal: Spacing.md,
