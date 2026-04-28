@@ -1,8 +1,9 @@
-import { useRouter } from 'expo-router';
-import React, { useState } from 'react';
-import { Alert, KeyboardAvoidingView, Platform, SafeAreaView, StyleSheet, TouchableOpacity, View } from 'react-native';
 import { BusyOverlay, Button, Input, Typography } from '@/components/common/shared';
 import { Colors, Spacing } from '@/theme/theme';
+import { useRouter } from 'expo-router';
+import React, { useState } from 'react';
+import { Alert, KeyboardAvoidingView, Platform, StyleSheet, TouchableOpacity, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { authApi } from '@/api/auth';
 import { useAuth } from '@/hooks/useAuth';

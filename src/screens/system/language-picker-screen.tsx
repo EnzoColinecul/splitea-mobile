@@ -1,12 +1,12 @@
-import React from 'react';
-import { View, StyleSheet, TouchableOpacity, ScrollView, SafeAreaView } from 'react-native';
-import { Stack, useRouter, useLocalSearchParams } from 'expo-router';
-import { ChevronLeft, Check } from 'lucide-react-native';
-import { Typography, BusyOverlay } from '@/components/common/shared';
-import { Colors, Spacing, BorderRadius } from '@/theme/theme';
 import { userApi } from '@/api/user';
+import { BusyOverlay, Typography } from '@/components/common/shared';
+import { BorderRadius, Colors, Spacing } from '@/theme/theme';
 import { GlobalEvents } from '@/utils/events';
-import { useState } from 'react';
+import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
+import { Check, ChevronLeft } from 'lucide-react-native';
+import React, { useState } from 'react';
+import { ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 const LANGUAGES = [
   { code: 'es-ES', name: 'Spanish', flag: '🇪🇸' },

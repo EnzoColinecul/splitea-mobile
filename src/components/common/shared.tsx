@@ -1,6 +1,6 @@
+import { BorderRadius, Colors, Spacing } from '@/theme/theme';
 import React from 'react';
 import { ActivityIndicator, StyleProp, StyleSheet, Text, TextInput, TextStyle, TouchableOpacity, View, ViewStyle } from 'react-native';
-import { BorderRadius, Colors, Spacing } from '@/theme/theme';
 
 export const Button = ({ title, onPress, variant = 'primary', style, disabled }: { title: string, onPress: () => void, variant?: 'primary' | 'secondary' | 'outline' | 'danger', style?: StyleProp<ViewStyle>, disabled?: boolean }) => {
   const buttonStyle = [
@@ -25,11 +25,11 @@ export const Button = ({ title, onPress, variant = 'primary', style, disabled }:
   );
 };
 
-export const Input = ({ value, onChangeText, placeholder, secureTextEntry, label, keyboardType, editable = true }: { value: string, onChangeText: (text: string) => void, placeholder?: string, secureTextEntry?: boolean, label?: string, keyboardType?: 'default' | 'numeric' | 'email-address' | 'phone-pad', editable?: boolean }) => (
-  <View style={styles.inputContainer}>
+export const Input = ({ value, onChangeText, placeholder, secureTextEntry, label, keyboardType, editable = true, containerStyle, style }: { value: string, onChangeText: (text: string) => void, placeholder?: string, secureTextEntry?: boolean, label?: string, keyboardType?: 'default' | 'numeric' | 'email-address' | 'phone-pad', editable?: boolean, containerStyle?: StyleProp<ViewStyle>, style?: StyleProp<TextStyle> }) => (
+  <View style={[styles.inputContainer, containerStyle]}>
     {label && <Text style={styles.label}>{label}</Text>}
     <TextInput
-      style={[styles.input, !editable && styles.inputDisabled]}
+      style={[styles.input, !editable && styles.inputDisabled, style]}
       value={value}
       onChangeText={onChangeText}
       placeholder={placeholder}

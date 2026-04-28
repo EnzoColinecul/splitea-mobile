@@ -8,15 +8,17 @@ import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { Camera, CheckCircle2, ChevronLeft, Mic, RefreshCw, Sparkles, Square, Trash2 } from 'lucide-react-native';
 import React, { useState } from 'react';
 import {
-  Alert,
-  SafeAreaView,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
+    Alert,
+    KeyboardAvoidingView,
+    Platform,
+    // SafeAreaView,
+    ScrollView,
+    StyleSheet,
+    TextInput,
+    TouchableOpacity,
+    View
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { v4 } from 'uuid';
 
 const AUDIO_MIME_TYPES: Record<string, string> = {
@@ -164,7 +166,11 @@ export default function ScanReceiptScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <Stack.Screen options={{ headerShown: false }} />
-      <View style={styles.header}>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        style={{ flex: 1 }}
+      >
+        <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()} style={styles.backBtn} disabled={isBusy}>
           <ChevronLeft size={28} color={Colors.text} />
         </TouchableOpacity>
@@ -172,7 +178,11 @@ export default function ScanReceiptScreen() {
         <View style={{ width: 44 }} />
       </View>
 
-      <ScrollView contentContainerStyle={styles.scroll} scrollEnabled={!isBusy}>
+        <ScrollView
+          contentContainerStyle={styles.scroll}
+          scrollEnabled={!isBusy}
+          keyboardShouldPersistTaps="handled"
+        >
         <Typography.Header style={styles.mainTitle}>Let AI Handle The Math!</Typography.Header>
 
         <TouchableOpacity
@@ -235,16 +245,17 @@ export default function ScanReceiptScreen() {
         </View>
       </ScrollView>
 
-      {!loading && (
-        <View style={styles.footer}>
-          <Button
-            title="Analyze with AI"
-            onPress={handleAnalyze}
-            disabled={isBusy || !imageUri || !instruction.trim()}
-            style={[styles.analyzeBtn, (!imageUri || !instruction.trim()) && { opacity: 0.5 }]}
-          />
-        </View>
-      )}
+        {!loading && (
+          <View style={styles.footer}>
+            <Button
+              title="Analyze with AI"
+              onPress={handleAnalyze}
+              disabled={isBusy || !imageUri || !instruction.trim()}
+              style={[styles.analyzeBtn, (!imageUri || !instruction.trim()) && { opacity: 0.5 }]}
+            />
+          </View>
+        )}
+      </KeyboardAvoidingView>
 
       <BusyOverlay visible={isBusy} label={loadingStep} />
     </SafeAreaView>

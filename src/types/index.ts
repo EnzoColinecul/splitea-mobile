@@ -86,6 +86,7 @@ export interface Expense {
   expense_type: string;
   split_type: string;
   currency: string;
+  receipt_url?: string;
   expense_date: string;
   created_at: string;
   updated_at: string;

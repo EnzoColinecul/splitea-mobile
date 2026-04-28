@@ -5,7 +5,8 @@ import { GlobalEvents } from '@/utils/events';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { Check, ChevronLeft } from 'lucide-react-native';
 import React, { useState } from 'react';
-import { SafeAreaView, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
+import { ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 const CURRENCIES = [
   { code: 'ARS', name: 'Argentine Peso', symbol: '$' },

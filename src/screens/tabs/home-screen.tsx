@@ -7,7 +7,8 @@ import { DashboardSummary, User } from '@/types';
 import { useRouter } from 'expo-router';
 import { ArrowDownLeft, ArrowUpRight, Bell, Wallet } from 'lucide-react-native';
 import React, { useCallback, useEffect, useState } from 'react';
-import { ActivityIndicator, NativeScrollEvent, NativeSyntheticEvent, Platform, RefreshControl, SafeAreaView, ScrollView, StyleSheet, Text, TouchableOpacity, useWindowDimensions, View } from 'react-native';
+import { ActivityIndicator, NativeScrollEvent, NativeSyntheticEvent, Platform, RefreshControl, ScrollView, StyleSheet, Text, TouchableOpacity, useWindowDimensions, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function DashboardScreen() {
   const router = useRouter();

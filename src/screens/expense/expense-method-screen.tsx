@@ -1,12 +1,12 @@
-import { Stack, useRouter } from 'expo-router';
-import { ChevronLeft } from 'lucide-react-native';
-import React, { useEffect, useState } from 'react';
-import { ActivityIndicator, Alert, SafeAreaView, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import apiClient from '@/api/api-client';
 import { groupsApi } from '@/api/social';
 import { Button, Typography } from '@/components/common/shared';
 import { BorderRadius, Colors, Spacing } from '@/theme/theme';
-import { Search } from 'lucide-react-native';
+import { Stack, useRouter } from 'expo-router';
+import { ChevronLeft, Search } from 'lucide-react-native';
+import React, { useEffect, useState } from 'react';
+import { ActivityIndicator, Alert, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function ExpenseMethodScreen() {
   const router = useRouter();
@@ -45,7 +45,7 @@ export default function ExpenseMethodScreen() {
       setFriends(fRes.data.friends || []);
       setGroups(gRes.data.groups || []);
       setCurrentUser(uRes.data);
-      
+
       // Auto-select "Me"
       if (uRes.data) {
         setSelectedFriends([uRes.data.user_id]);
@@ -109,11 +109,11 @@ export default function ExpenseMethodScreen() {
     setGroupParticipants([]);
   };
 
-  const filteredFriends = friends.filter(f => 
+  const filteredFriends = friends.filter(f =>
     `${f.first_name} ${f.last_name}`.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  const filteredGroups = groups.filter(g => 
+  const filteredGroups = groups.filter(g =>
     g.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
@@ -131,7 +131,7 @@ export default function ExpenseMethodScreen() {
           name: p.name,
           isGroup: false
         }));
-      
+
       if (participants.length === 0) {
         Alert.alert('Select participants', 'Please select at least one person from the group.');
         return;
@@ -141,13 +141,13 @@ export default function ExpenseMethodScreen() {
         Alert.alert('Select friends', 'Please choose at least one friend to split with.');
         return;
       }
-      
+
       const selectedInList = friends.filter(f => selectedFriends.includes(f.user_id));
       participants = selectedInList.map(f => ({
         id: f.user_id,
         name: `${f.first_name} ${f.last_name}`
       }));
-      
+
       if (currentUser && selectedFriends.includes(currentUser.user_id)) {
         // Only add if not already in list
         if (!participants.find(p => p.id === currentUser.user_id)) {
@@ -189,7 +189,7 @@ export default function ExpenseMethodScreen() {
 
       <ScrollView contentContainerStyle={styles.scroll} stickyHeaderIndices={[1]}>
         <Typography.Header style={styles.mainTitle}>Who are you splitting with?</Typography.Header>
-        
+
         <View style={styles.stickyHeader}>
           <View style={styles.searchBar}>
             <Search size={20} color={Colors.textSecondary} />
@@ -203,14 +203,14 @@ export default function ExpenseMethodScreen() {
           </View>
 
           <View style={styles.tabContainer}>
-            <TouchableOpacity 
-              style={[styles.tab, activeTab === 'friends' && styles.activeTab]} 
+            <TouchableOpacity
+              style={[styles.tab, activeTab === 'friends' && styles.activeTab]}
               onPress={() => switchTab('friends')}
             >
               <Text style={[styles.tabText, activeTab === 'friends' && styles.activeTabText]}>Friends</Text>
             </TouchableOpacity>
-            <TouchableOpacity 
-              style={[styles.tab, activeTab === 'groups' && styles.activeTab]} 
+            <TouchableOpacity
+              style={[styles.tab, activeTab === 'groups' && styles.activeTab]}
               onPress={() => switchTab('groups')}
             >
               <Text style={[styles.tabText, activeTab === 'groups' && styles.activeTabText]}>Groups</Text>
@@ -243,7 +243,7 @@ export default function ExpenseMethodScreen() {
                         {isSelected && <Text style={styles.check}>✓</Text>}
                       </View>
                     </TouchableOpacity>
-                    
+
                     {isSelected && (
                       <View style={styles.participantsContainer}>
                         <Text style={styles.participantsTitle}>PARTICIPANTS</Text>
@@ -288,9 +288,9 @@ export default function ExpenseMethodScreen() {
                 onPress={() => toggleFriend(currentUser.user_id)}
               >
                 <View style={[styles.avatar, { backgroundColor: '#FEE2E2' }]}>
-                  <Text style={[styles.avatarText, { color: '#B91C1C' }]}>Me</Text>
+                  <Text style={[styles.avatarText, { color: '#B91C1C' }]}>{currentUser.first_name.charAt(0)}</Text>
                 </View>
-                <Text style={styles.itemName}>Me (You)</Text>
+                <Text style={styles.itemName}> {currentUser.first_name} {currentUser.last_name} (You)</Text>
                 <View style={[styles.checkbox, selectedFriends.includes(currentUser.user_id) && styles.checkboxActive]}>
                   {selectedFriends.includes(currentUser.user_id) && <Text style={styles.check}>✓</Text>}
                 </View>

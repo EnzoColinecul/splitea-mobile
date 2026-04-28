@@ -1,11 +1,12 @@
-import { Stack, useRouter } from 'expo-router';
-import { CheckCircle, ChevronLeft } from 'lucide-react-native';
-import React, { useEffect, useState } from 'react';
-import { ActivityIndicator, Alert, SafeAreaView, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { friendsApi, groupsApi } from '@/api/social';
 import { BusyOverlay, Button, Typography } from '@/components/common/shared';
 import { Colors, Spacing } from '@/theme/theme';
 import { Friend } from '@/types';
+import { Stack, useRouter } from 'expo-router';
+import { CheckCircle, ChevronLeft } from 'lucide-react-native';
+import React, { useEffect, useState } from 'react';
+import { ActivityIndicator, Alert, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function CreateGroupScreen() {
   const router = useRouter();

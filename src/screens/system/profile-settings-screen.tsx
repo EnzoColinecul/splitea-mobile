@@ -1,13 +1,13 @@
-import React, { useState, useEffect } from 'react';
-import { View, StyleSheet, TouchableOpacity, ScrollView, SafeAreaView, ActivityIndicator, Alert } from 'react-native';
-import { Stack, useRouter } from 'expo-router';
-import { ChevronLeft, ChevronRight, User as UserIcon, Globe, CreditCard, Mail } from 'lucide-react-native';
-import { Typography, BusyOverlay, Input, Button } from '@/components/common/shared';
-import { Colors, Spacing, BorderRadius } from '@/theme/theme';
 import { userApi } from '@/api/user';
+import { BusyOverlay, Button, Input, Typography } from '@/components/common/shared';
+import { BorderRadius, Colors, Spacing } from '@/theme/theme';
 import { User } from '@/types';
-import { DeviceEventEmitter } from 'react-native';
 import { GlobalEvents } from '@/utils/events';
+import { Stack, useRouter } from 'expo-router';
+import { ChevronLeft, ChevronRight, CreditCard, Globe } from 'lucide-react-native';
+import React, { useEffect, useState } from 'react';
+import { ActivityIndicator, Alert, DeviceEventEmitter, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function ProfileSettingsScreen() {
   const router = useRouter();

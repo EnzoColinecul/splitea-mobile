@@ -5,14 +5,14 @@ import { BusyOverlay, Button, Input, Typography } from '@/components/common/shar
 import { SplitAmount, SplitEditor } from '@/components/expenses/split-editor';
 import { BorderRadius, Colors, Spacing } from '@/theme/theme';
 import { SplitType, User } from '@/types';
+import { GlobalEvents } from '@/utils/events';
 import * as ImagePicker from 'expo-image-picker';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { Camera, CheckCircle2, ChevronLeft, ChevronRight, CreditCard, Info, Trash2, Users } from 'lucide-react-native';
 import React, { useEffect, useState } from 'react';
-import { ActivityIndicator, Alert, SafeAreaView, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Alert, DeviceEventEmitter, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { v4 } from 'uuid';
-import { GlobalEvents } from '@/utils/events';
-import { DeviceEventEmitter } from 'react-native';
 
 export default function ExpenseDetailsScreen() {
   const router = useRouter();

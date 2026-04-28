@@ -1,6 +1,6 @@
 import {
-  ProposedExpense,
-  ReceiptAnalyzeResponse
+    ProposedExpense,
+    ReceiptAnalyzeResponse
 } from '@/api/expenses';
 import { Button, Card, Typography } from '@/components/common/shared';
 import { BorderRadius, Colors, Spacing } from '@/theme/theme';
@@ -8,15 +8,16 @@ import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { CheckCircle2, ChevronLeft, Info } from 'lucide-react-native';
 import React, { useState } from 'react';
 import {
-  Alert,
-  SafeAreaView,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
+    Alert,
+    // SafeAreaView,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function ReceiptSplitPreviewScreen() {
   const router = useRouter();
@@ -77,7 +78,6 @@ export default function ReceiptSplitPreviewScreen() {
         participants: JSON.stringify(expenses[0].splits.map(s => ({ id: s.user_id, name: s.name }))),
         groupId,
         initialAmount: String(expenses[0].total_amount),
-        initialTitle: expenses[0].title || '',
         receiptUrl: receiptUrl,
         // We could pass more complex split data if needed
       }

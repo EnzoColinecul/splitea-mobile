@@ -1,11 +1,12 @@
-import { ChevronRight, Plus, Users } from 'lucide-react-native';
-import { useRouter } from 'expo-router';
-import React, { useEffect, useState, useCallback } from 'react';
-import { ActivityIndicator, FlatList, RefreshControl, SafeAreaView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { groupsApi } from '@/api/social';
-import { Button, Card, Typography } from '@/components/common/shared';
+import { Button, Typography } from '@/components/common/shared';
 import { BorderRadius, Colors, Spacing } from '@/theme/theme';
 import { Group } from '@/types';
+import { useRouter } from 'expo-router';
+import { ChevronRight, Plus, Users } from 'lucide-react-native';
+import React, { useCallback, useEffect, useState } from 'react';
+import { ActivityIndicator, FlatList, RefreshControl, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function GroupsScreen() {
   const router = useRouter();
