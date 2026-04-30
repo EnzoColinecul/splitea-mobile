@@ -6,9 +6,9 @@ export const expensesApi = {
     const response = await apiClient.get<DashboardSummary>('/expense/user/summary');
     return response.data;
   },
-  listUserExpenses: async () => {
-    const response = await apiClient.get<{ expenses: Expense[] }>('/expense/user/expenses');
-    return response.data.expenses;
+  listUserExpenses: async (params?: { limit?: number; offset?: number }) => {
+    const response = await apiClient.get<{ expenses: Expense[]; total: number }>('/expense/user/expenses', { params });
+    return response.data;
   },
   create: async (data: any) => {
     const response = await apiClient.post<Expense>('/expense/create', data);
@@ -50,7 +50,21 @@ export const expensesApi = {
     const response = await apiClient.post('/expense/extract-receipt-total', data);
     return response.data as ReceiptTotalResponse;
   },
+  transcribeInstruction: async (formData: FormData) => {
+    const response = await apiClient.post<TranscribeAudioResponse>(
+      '/expense/transcribe-instruction',
+      formData,
+      {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      }
+    );
+    return response.data;
+  },
 };
+
+export interface TranscribeAudioResponse {
+  transcription: string;
+}
 
 export interface ReceiptTotalResponse {
   total_amount: number;

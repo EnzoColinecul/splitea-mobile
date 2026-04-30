@@ -1,8 +1,8 @@
 import { useRouter, useSegments } from 'expo-router';
 import * as SecureStore from 'expo-secure-store';
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { userApi } from '../api/user';
-import { authEvents } from '../utils/auth-events';
+import { userApi } from '@/api/user';
+import { authEvents } from '@/utils/auth-events';
 
 interface AuthContextType {
   token: string | null;

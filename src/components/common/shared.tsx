@@ -1,0 +1,138 @@
+import { BorderRadius, Colors, Spacing } from '@/theme/theme';
+import React from 'react';
+import { ActivityIndicator, StyleProp, StyleSheet, Text, TextInput, TextStyle, TouchableOpacity, View, ViewStyle } from 'react-native';
+
+export const Button = ({ title, onPress, variant = 'primary', style, disabled }: { title: string, onPress: () => void, variant?: 'primary' | 'secondary' | 'outline' | 'danger', style?: StyleProp<ViewStyle>, disabled?: boolean }) => {
+  const buttonStyle = [
+    styles.button,
+    variant === 'primary' && styles.buttonPrimary,
+    variant === 'secondary' && styles.buttonSecondary,
+    variant === 'outline' && styles.buttonOutline,
+    variant === 'danger' && styles.buttonDanger,
+    disabled && styles.buttonDisabled,
+    style
+  ];
+
+  const textStyle = [
+    styles.buttonText,
+    variant === 'outline' && { color: Colors.primary }
+  ];
+
+  return (
+    <TouchableOpacity style={buttonStyle} onPress={onPress} activeOpacity={0.8} disabled={disabled}>
+      <Text style={textStyle}>{title}</Text>
+    </TouchableOpacity>
+  );
+};
+
+export const Input = ({ value, onChangeText, placeholder, secureTextEntry, label, keyboardType, editable = true, containerStyle, style }: { value: string, onChangeText: (text: string) => void, placeholder?: string, secureTextEntry?: boolean, label?: string, keyboardType?: 'default' | 'numeric' | 'email-address' | 'phone-pad', editable?: boolean, containerStyle?: StyleProp<ViewStyle>, style?: StyleProp<TextStyle> }) => (
+  <View style={[styles.inputContainer, containerStyle]}>
+    {label && <Text style={styles.label}>{label}</Text>}
+    <TextInput
+      style={[styles.input, !editable && styles.inputDisabled, style]}
+      value={value}
+      onChangeText={onChangeText}
+      placeholder={placeholder}
+      secureTextEntry={secureTextEntry}
+      placeholderTextColor={Colors.textSecondary}
+      keyboardType={keyboardType}
+      editable={editable}
+    />
+  </View>
+);
+
+export const BusyOverlay = ({ visible, label }: { visible: boolean, label?: string }) => {
+  if (!visible) return null;
+
+  return (
+    <View style={styles.busyOverlay}>
+      <View style={styles.busyCard}>
+        <ActivityIndicator size="large" color={Colors.primary} />
+        {label ? <Text style={styles.busyText}>{label}</Text> : null}
+      </View>
+    </View>
+  );
+};
+
+export const Card = ({ children, style }: { children: React.ReactNode, style?: StyleProp<ViewStyle> }) => (
+  <View style={[styles.card, style]}>
+    {children}
+  </View>
+);
+
+export const Typography = {
+  Header: ({ children, style, numberOfLines }: { children: React.ReactNode, style?: StyleProp<TextStyle>, numberOfLines?: number }) => <Text style={[styles.header, style]} numberOfLines={numberOfLines}>{children}</Text>,
+  SubHeader: ({ children, style, numberOfLines }: { children: React.ReactNode, style?: StyleProp<TextStyle>, numberOfLines?: number }) => <Text style={[styles.subHeader, style]} numberOfLines={numberOfLines}>{children}</Text>,
+  Body: ({ children, style, numberOfLines }: { children: React.ReactNode, style?: StyleProp<TextStyle>, numberOfLines?: number }) => <Text style={[styles.body, style]} numberOfLines={numberOfLines}>{children}</Text>,
+  Caption: ({ children, style, numberOfLines }: { children: React.ReactNode, style?: StyleProp<TextStyle>, numberOfLines?: number }) => <Text style={[styles.caption, style]} numberOfLines={numberOfLines}>{children}</Text>,
+  SectionHeader: ({ children, style }: { children: React.ReactNode, style?: StyleProp<TextStyle> }) => <Text style={[styles.sectionHeader, style]}>{String(children).toUpperCase()}</Text>,
+};
+
+const styles = StyleSheet.create({
+  button: {
+    paddingVertical: Spacing.md,
+    paddingHorizontal: Spacing.lg,
+    borderRadius: BorderRadius.round, // fully rounded capsule
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  buttonPrimary: { backgroundColor: Colors.primary },
+  buttonSecondary: { backgroundColor: Colors.secondary },
+  buttonOutline: { backgroundColor: 'transparent', borderWidth: 1, borderColor: Colors.primary },
+  buttonDanger: { backgroundColor: Colors.danger },
+  buttonDisabled: { opacity: 0.55 },
+  buttonText: { color: Colors.white, fontWeight: '700', fontSize: 16 },
+
+  inputContainer: { marginBottom: Spacing.md, width: '100%' },
+  label: { marginBottom: Spacing.xs, color: Colors.text, fontWeight: '700', fontSize: 13 },
+  input: {
+    backgroundColor: '#F9FAFB', // Very light gray/white contrast
+    borderWidth: 1.5,
+    borderColor: Colors.itemBorder,
+    borderRadius: BorderRadius.lg,
+    padding: Spacing.md,
+    fontSize: 16,
+    color: Colors.text,
+  },
+  inputDisabled: {
+    opacity: 0.65,
+  },
+
+  card: {
+    backgroundColor: Colors.white,
+    borderRadius: BorderRadius.card,
+    padding: Spacing.lg,
+    borderWidth: 1.5,
+    borderColor: Colors.itemBorder,
+  },
+
+  header: { fontSize: 32, fontWeight: '800', color: Colors.text, marginBottom: Spacing.xs },
+  subHeader: { fontSize: 20, fontWeight: '700', color: Colors.textSecondary, marginBottom: Spacing.md },
+  body: { fontSize: 16, color: Colors.text },
+  caption: { fontSize: 14, color: Colors.textSecondary },
+  sectionHeader: { fontSize: 13, fontWeight: '700', color: Colors.textSecondary, marginBottom: Spacing.sm, letterSpacing: 0.5 },
+  busyOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(255, 255, 255, 0.72)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 100,
+    elevation: 12,
+  },
+  busyCard: {
+    minWidth: 150,
+    paddingHorizontal: Spacing.xl,
+    paddingVertical: Spacing.lg,
+    borderRadius: BorderRadius.card,
+    backgroundColor: 'rgba(255,255,255,0.95)',
+    borderWidth: 1.5,
+    borderColor: Colors.itemBorder,
+    alignItems: 'center',
+    gap: Spacing.md,
+  },
+  busyText: {
+    color: Colors.text,
+    fontWeight: '700',
+    textAlign: 'center',
+  },
+});
