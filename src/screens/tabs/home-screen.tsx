@@ -3,6 +3,7 @@ import { expensesApi } from '@/api/expenses';
 import { notificationApi } from '@/api/notifications';
 import { Card, Typography } from '@/components/common/shared';
 import { Colors, Spacing } from '@/theme/theme';
+import { Image } from 'expo-image';
 import { DashboardSummary, User } from '@/types';
 import { useRouter } from 'expo-router';
 import { ArrowDownLeft, ArrowUpRight, Bell, Wallet } from 'lucide-react-native';
@@ -132,7 +133,11 @@ export default function DashboardScreen() {
 
         {/* Header */}
         <View style={styles.header}>
-          <Typography.Header style={styles.logoText}>Spliteá!</Typography.Header>
+          <Image
+            source={require('../../../assets/images/splitea-min.png')}
+            style={styles.logo}
+            contentFit="contain"
+          />
           <View style={styles.headerRight}>
             <TouchableOpacity style={styles.iconBtn}>
               <Bell size={24} color={Colors.text} />
@@ -260,7 +265,7 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#F8FAFC' }, // Very light slate/blue hint for contrast
   scrollContent: { padding: Spacing.xl, paddingTop: Platform.OS === 'ios' ? 10 : 40 },
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: Spacing.xl },
-  logoText: { color: Colors.primary, fontSize: 28, fontWeight: '900', marginBottom: 0 },
+  logo: { width: 120, height: 36 },
   headerRight: { flexDirection: 'row', alignItems: 'center', gap: Spacing.md },
   iconBtn: { padding: Spacing.xs, position: 'relative' },
   badge: { position: 'absolute', top: 0, right: 0, backgroundColor: Colors.danger, width: 16, height: 16, borderRadius: 8, justifyContent: 'center', alignItems: 'center', borderWidth: 2, borderColor: Colors.white },

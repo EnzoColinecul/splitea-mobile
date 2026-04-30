@@ -1,5 +1,6 @@
 import { BusyOverlay, Button, Input, Typography } from '@/components/common/shared';
 import { Colors, Spacing } from '@/theme/theme';
+import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import { Alert, KeyboardAvoidingView, Platform, StyleSheet, TouchableOpacity, View } from 'react-native';
@@ -45,7 +46,11 @@ export default function LoginScreen() {
         style={styles.inner}
       >
         <View style={styles.logoContainer}>
-          <Typography.Header style={styles.logoText}>Spliteá!</Typography.Header>
+          <Image
+            source={require('../../../assets/images/splitea-icon-transparent.png')}
+            style={styles.logo}
+            contentFit="contain"
+          />
           <Typography.Body style={styles.tagline}>Divide gastos, multiplica amigos.</Typography.Body>
         </View>
 
@@ -102,7 +107,7 @@ const styles = StyleSheet.create({
     marginTop: 100,
     marginBottom: 60
   },
-  logoText: { color: Colors.primary, fontSize: 44, marginBottom: 8, fontWeight: '900' },
+  logo: { width: 280, height: 160 , marginBottom: 0 },
   tagline: { color: Colors.textSecondary, fontSize: 16, fontWeight: '500' },
   formContainer: {
     flex: 1,
