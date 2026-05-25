@@ -91,18 +91,16 @@ const styles = StyleSheet.create({
     shadowOpacity: 0,
   },
   customBtnWrapper: {
-    top: -30, // move higher to overlap properly
+    top: -15, // move higher to overlap properly
     justifyContent: 'center',
     alignItems: 'center',
     flex: 1,
   },
   customBtn: {
-    width: 72,
-    height: 72,
+    width: 64,
+    height: 64,
     borderRadius: 36,
     backgroundColor: Colors.primary,
-    borderWidth: 4,
-    borderColor: Colors.white, // White border around the orange button
     justifyContent: 'center',
     alignItems: 'center',
     shadowColor: Colors.primary, // Orange glow

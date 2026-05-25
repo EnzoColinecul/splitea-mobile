@@ -42,20 +42,18 @@ export default function GroupDetailScreen() {
         groupsApi.get(groupId),
         groupsApi.getUsers(groupId),
         expensesApi.getGroupBalances(groupId),
-        expensesApi.listUserExpenses(),
+        expensesApi.getGroupExpenses(groupId),
       ]);
       setCurrentUser(profileRes.data);
       setGroup(gData);
       setMembers(mData.users || []);
       setBalances(bData || []);
       setExpenses(
-        (eData.expenses || [])
-          .filter((exp: Expense) => exp.group_id === groupId)
-          .sort((left: Expense, right: Expense) => {
-            const rightTime = new Date(right.expense_date || right.created_at).getTime();
-            const leftTime = new Date(left.expense_date || left.created_at).getTime();
-            return rightTime - leftTime;
-          })
+        (eData.expenses || []).sort((left: Expense, right: Expense) => {
+          const rightTime = new Date(right.expense_date || right.created_at).getTime();
+          const leftTime = new Date(left.expense_date || left.created_at).getTime();
+          return rightTime - leftTime;
+        })
       );
     } catch (err) {
       console.error(err);

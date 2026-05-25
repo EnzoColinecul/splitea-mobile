@@ -42,14 +42,14 @@ export default function SettleUpScreen() {
         groupsApi.get(groupId),
         groupsApi.getUsers(groupId),
         expensesApi.getGroupBalances(groupId),
-        expensesApi.listUserExpenses(),
+        expensesApi.getGroupExpenses(groupId),
       ]);
 
       setCurrentUser(profileRes.data);
       setGroup(groupRes);
       setMembers(usersRes.users || []);
       setBalances(balancesRes || []);
-      setExpenses((expensesRes.expenses || []).filter((expense: Expense) => expense.group_id === groupId));
+      setExpenses(expensesRes.expenses || []);
     } catch (error) {
       console.error(error);
       Alert.alert('Error', 'Could not load settle up details.');
