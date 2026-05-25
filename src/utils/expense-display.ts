@@ -103,7 +103,7 @@ export const deriveGroupBalancesFromExpenses = (expenses: Expense[]): GroupBalan
       const debtorId = split.user_id;
       const amount = Number(split.amount_owed) || 0;
 
-      if (!debtorId || debtorId === payerId || amount <= 0) {
+      if (!debtorId || debtorId === payerId || amount <= 0 || split.is_paid === 'true') {
         return;
       }
 

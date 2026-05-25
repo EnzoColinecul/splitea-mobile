@@ -261,7 +261,7 @@ export default function ExpenseMethodScreen() {
                                   {participant.name.charAt(0)}
                                 </Text>
                               </View>
-                              <Text style={styles.participantName}>{participant.name} {participant.isMe ? '(Me)' : ''}</Text>
+                              <Text style={styles.participantName}>{participant.name} {participant.isMe ? '(You)' : ''}</Text>
                               <View style={[styles.miniCheckbox, participant.isSelected && styles.miniCheckboxActive]}>
                                 {participant.isSelected && <Text style={styles.miniCheck}>✓</Text>}
                               </View>

@@ -6,9 +6,9 @@ import { Colors, Spacing } from '@/theme/theme';
 import { Expense, User } from '@/types';
 import { buildMemberLookup, formatCurrency, getDisplayName, getExpenseParticipantAmount } from '@/utils/expense-display';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
-import { ChevronLeft, Users } from 'lucide-react-native';
+import { ChevronLeft, Download, Expand, FileImage, Users, X } from 'lucide-react-native';
 import React, { useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Alert, Dimensions, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Alert, Dimensions, Image, Linking, Modal, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -64,6 +64,9 @@ export default function ExpenseViewScreen() {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [members, setMembers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [receiptVisible, setReceiptVisible] = useState(false);
+  const [receiptPresignedUrl, setReceiptPresignedUrl] = useState<string | null>(null);
+  const [receiptLoading, setReceiptLoading] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -119,6 +122,35 @@ export default function ExpenseViewScreen() {
 
   const memberLookup = useMemo(() => buildMemberLookup(members, currentUser), [members, currentUser]);
   const paidByName = expense ? getDisplayName(expense.paid_by, memberLookup) : 'Member';
+
+  const handleOpenReceipt = async () => {
+    if (!expense?.receipt_url) return;
+    setReceiptVisible(true);
+    setReceiptLoading(true);
+    try {
+      const url = await expensesApi.getReceiptUrl(expense.receipt_url);
+      setReceiptPresignedUrl(url);
+    } catch {
+      Alert.alert('Error', 'Could not load receipt image.');
+      setReceiptVisible(false);
+    } finally {
+      setReceiptLoading(false);
+    }
+  };
+
+  const handleCloseReceipt = () => {
+    setReceiptVisible(false);
+    setReceiptPresignedUrl(null);
+  };
+
+  const handleDownloadReceipt = async () => {
+    if (!receiptPresignedUrl) return;
+    try {
+      await Linking.openURL(receiptPresignedUrl);
+    } catch {
+      Alert.alert('Error', 'Could not open receipt for download.');
+    }
+  };
 
   if (loading || !expense) {
     return (
@@ -238,13 +270,65 @@ export default function ExpenseViewScreen() {
           </View>
         </Card>
 
-        <Card style={styles.sectionCardPremium}>
-          <Typography.SectionHeader style={styles.premiumSectionHeader}>Receipt</Typography.SectionHeader>
-          <Typography.Caption style={{ marginTop: Spacing.xs }}>
-            {expense.receipt_url ? 'Receipt captured for this expense.' : 'No receipt attached.'}
-          </Typography.Caption>
-        </Card>
+        {expense.receipt_url ? (
+          <TouchableOpacity activeOpacity={0.75} onPress={handleOpenReceipt}>
+            <Card style={styles.sectionCardPremium}>
+              <View style={styles.sectionHeaderRow}>
+                <Typography.SectionHeader style={styles.premiumSectionHeader}>Receipt</Typography.SectionHeader>
+                <Expand size={16} color={Colors.primary} />
+              </View>
+              <View style={styles.receiptThumbRow}>
+                <View style={styles.receiptThumbBox}>
+                  <FileImage size={32} color={Colors.primary} />
+                </View>
+                <View style={styles.receiptThumbMeta}>
+                  <Typography.Body style={styles.receiptThumbLabel}>Receipt captured</Typography.Body>
+                  <Typography.Caption style={styles.receiptThumbHint}>Tap to view full image</Typography.Caption>
+                </View>
+              </View>
+            </Card>
+          </TouchableOpacity>
+        ) : (
+          <Card style={styles.sectionCardPremium}>
+            <Typography.SectionHeader style={styles.premiumSectionHeader}>Receipt</Typography.SectionHeader>
+            <Typography.Caption style={{ marginTop: Spacing.xs }}>No receipt attached.</Typography.Caption>
+          </Card>
+        )}
       </ScrollView>
+
+      {/* Fullscreen Receipt Modal */}
+      <Modal
+        visible={receiptVisible}
+        animationType="fade"
+        statusBarTranslucent
+        onRequestClose={handleCloseReceipt}
+      >
+        <View style={styles.receiptModalContainer}>
+          {/* Close button */}
+          <TouchableOpacity style={styles.receiptModalClose} onPress={handleCloseReceipt}>
+            <X size={28} color={Colors.white} />
+          </TouchableOpacity>
+
+          {/* Image area */}
+          {receiptLoading ? (
+            <ActivityIndicator size="large" color={Colors.white} />
+          ) : receiptPresignedUrl ? (
+            <Image
+              source={{ uri: receiptPresignedUrl }}
+              style={styles.receiptModalImage}
+              resizeMode="contain"
+            />
+          ) : null}
+
+          {/* Download bar */}
+          {!receiptLoading && receiptPresignedUrl && (
+            <TouchableOpacity style={styles.receiptDownloadBar} onPress={handleDownloadReceipt} activeOpacity={0.8}>
+              <Download size={20} color={Colors.white} />
+              <Text style={styles.receiptDownloadText}>Download Receipt</Text>
+            </TouchableOpacity>
+          )}
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -348,4 +432,26 @@ const styles = StyleSheet.create({
   splitNameText: { fontWeight: '700', fontSize: 15, marginBottom: 2 },
   splitAmountText: { fontWeight: '700', color: Colors.secondary, fontSize: 16 },
   listDivider: { height: 1, backgroundColor: '#F1F5F9' },
+
+  receiptThumbRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.lg },
+  receiptThumbBox: { width: 56, height: 56, borderRadius: 12, backgroundColor: '#EEF2FF', justifyContent: 'center', alignItems: 'center' },
+  receiptThumbMeta: { flex: 1, gap: 4 },
+  receiptThumbLabel: { fontWeight: '700', fontSize: 15, color: Colors.text },
+  receiptThumbHint: { color: Colors.primary, fontWeight: '600', fontSize: 13 },
+
+  receiptModalContainer: { flex: 1, backgroundColor: '#000', justifyContent: 'center', alignItems: 'center' },
+  receiptModalClose: { position: 'absolute', top: 56, right: 20, zIndex: 10, padding: 8, borderRadius: 20, backgroundColor: 'rgba(255,255,255,0.15)' },
+  receiptModalImage: { width: SCREEN_WIDTH, height: '80%' },
+  receiptDownloadBar: {
+    position: 'absolute',
+    bottom: 48,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.sm,
+    backgroundColor: Colors.primary,
+    paddingHorizontal: Spacing.xl,
+    paddingVertical: Spacing.md,
+    borderRadius: 32,
+  },
+  receiptDownloadText: { color: Colors.white, fontWeight: '700', fontSize: 16 },
 });
