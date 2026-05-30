@@ -6,7 +6,7 @@ import { Colors, Spacing } from '@/theme/theme';
 import { Expense, User } from '@/types';
 import { buildMemberLookup, formatCurrency, getDisplayName, getExpenseParticipantAmount } from '@/utils/expense-display';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
-import { ChevronLeft, Download, Expand, FileImage, Users, X } from 'lucide-react-native';
+import { ChevronLeft, Download, Expand, FileImage, Trash2, Users, X } from 'lucide-react-native';
 import React, { useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, Alert, Dimensions, Image, Linking, Modal, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -123,6 +123,29 @@ export default function ExpenseViewScreen() {
   const memberLookup = useMemo(() => buildMemberLookup(members, currentUser), [members, currentUser]);
   const paidByName = expense ? getDisplayName(expense.paid_by, memberLookup) : 'Member';
 
+  const handleDeleteExpense = () => {
+    if (!expense) return;
+    Alert.alert(
+      'Delete expense',
+      'This will be recorded in the group activity. Are you sure?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await expensesApi.deleteExpense(expense.expense_id);
+              router.back();
+            } catch {
+              Alert.alert('Error', 'Could not delete this expense.');
+            }
+          },
+        },
+      ]
+    );
+  };
+
   const handleOpenReceipt = async () => {
     if (!expense?.receipt_url) return;
     setReceiptVisible(true);
@@ -168,7 +191,13 @@ export default function ExpenseViewScreen() {
           <ChevronLeft size={28} color={Colors.text} />
         </TouchableOpacity>
         <Typography.SubHeader style={styles.headerTitle}>Expense Details</Typography.SubHeader>
-        <View style={styles.headerSpacer} />
+        {currentUser && expense && currentUser.user_id === expense.paid_by ? (
+          <TouchableOpacity onPress={handleDeleteExpense} style={styles.deleteBtn}>
+            <Trash2 size={22} color="#E53935" />
+          </TouchableOpacity>
+        ) : (
+          <View style={styles.headerSpacer} />
+        )}
       </View>
 
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
@@ -346,6 +375,7 @@ const styles = StyleSheet.create({
   backBtn: { padding: Spacing.xs },
   headerTitle: { fontSize: 18, color: Colors.text, marginBottom: 0, fontWeight: '700' },
   headerSpacer: { width: 36 },
+  deleteBtn: { padding: Spacing.xs, width: 36, alignItems: 'center' },
   scroll: { padding: Spacing.lg, paddingBottom: 40, gap: Spacing.lg },
   
   receiptWrapper: {

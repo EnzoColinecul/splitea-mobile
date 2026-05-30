@@ -1,13 +1,45 @@
-import { Friend, Group } from '../types';
+import { Friend, Group, UploadUrlResponse } from '../types';
 import apiClient from './api-client';
+
+export interface GroupCreatePayload {
+  name: string;
+  description: string;
+  emoji?: string | null;
+  picture_s3_key?: string | null;
+}
+
+export interface GroupUpdatePayload {
+  name?: string;
+  description?: string;
+  emoji?: string | null;
+  picture_s3_key?: string | null;
+}
 
 export const groupsApi = {
   list: async () => {
     const response = await apiClient.get<{ groups: Group[] }>('/group/list');
     return response.data.groups;
   },
-  create: async (data: { name: string; description: string }) => {
+  create: async (data: GroupCreatePayload) => {
     const response = await apiClient.post<Group>('/group/create', data);
+    return response.data;
+  },
+  update: async (groupId: string, data: GroupUpdatePayload) => {
+    const response = await apiClient.put<Group>(`/group/${groupId}`, data);
+    return response.data;
+  },
+  pin: async (groupId: string) => {
+    const response = await apiClient.put(`/group/${groupId}/pin`);
+    return response.data;
+  },
+  unpin: async (groupId: string) => {
+    const response = await apiClient.delete(`/group/${groupId}/pin`);
+    return response.data;
+  },
+  getUploadUrl: async (groupId: string, filename: string, contentType: string = 'image/jpeg') => {
+    const response = await apiClient.get<UploadUrlResponse>(`/group/${groupId}/upload-url`, {
+      params: { filename, content_type: contentType },
+    });
     return response.data;
   },
   addFriends: async (groupId: string, friend_ids: string[]) => {

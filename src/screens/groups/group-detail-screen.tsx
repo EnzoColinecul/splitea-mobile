@@ -14,10 +14,26 @@ import {
 } from '@/utils/expense-display';
 import { useFocusEffect } from '@react-navigation/native';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
-import { ArrowDownCircle, ArrowUpCircle, ChevronLeft, Plus, Receipt, UserPlus } from 'lucide-react-native';
+import { ArrowDownCircle, ArrowUpCircle, CheckCircle, ChevronLeft, Plus, Receipt, Trash2, UserPlus } from 'lucide-react-native';
 import React, { useCallback, useMemo, useState } from 'react';
 import { ActivityIndicator, Alert, NativeScrollEvent, NativeSyntheticEvent, ScrollView, StyleSheet, Text, TouchableOpacity, useWindowDimensions, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+
+function getRelativeTime(dateStr: string): string {
+  const date = new Date(dateStr);
+  if (isNaN(date.getTime())) return '';
+  const now = new Date();
+  const todayMidnight = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const dateMidnight = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+  const diffDays = Math.round((todayMidnight.getTime() - dateMidnight.getTime()) / (1000 * 60 * 60 * 24));
+  if (diffDays === 0) return 'Today';
+  if (diffDays === 1) return 'Yesterday';
+  if (diffDays < 7) return `${diffDays} days ago`;
+  if (diffDays < 14) return '1 week ago';
+  if (diffDays < 30) return `${Math.floor(diffDays / 7)} weeks ago`;
+  if (diffDays < 60) return '1 month ago';
+  return `${Math.floor(diffDays / 30)} months ago`;
+}
 
 export default function GroupDetailScreen() {
   const router = useRouter();
@@ -50,8 +66,12 @@ export default function GroupDetailScreen() {
       setBalances(bData || []);
       setExpenses(
         (eData.expenses || []).sort((left: Expense, right: Expense) => {
-          const rightTime = new Date(right.expense_date || right.created_at).getTime();
-          const leftTime = new Date(left.expense_date || left.created_at).getTime();
+          const rightTime = new Date(
+            (right.is_deleted ? right.deleted_at : right.expense_date) || right.created_at
+          ).getTime();
+          const leftTime = new Date(
+            (left.is_deleted ? left.deleted_at : left.expense_date) || left.created_at
+          ).getTime();
           return rightTime - leftTime;
         })
       );
@@ -77,7 +97,9 @@ export default function GroupDetailScreen() {
   const memberLookup = useMemo(() => buildMemberLookup(members, currentUser), [members, currentUser]);
 
   const visibleBalances = useMemo(() => {
-    const derivedBalances = deriveGroupBalancesFromExpenses(expenses);
+    const derivedBalances = deriveGroupBalancesFromExpenses(
+      expenses.filter(e => !e.is_deleted && e.expense_type !== 'settle-up')
+    );
     const sourceBalances = derivedBalances.length > 0 ? derivedBalances : balances;
 
     return sourceBalances
@@ -234,37 +256,77 @@ export default function GroupDetailScreen() {
           ))
         )}
 
-        {/* Recent Expenses Section */}
-        <Typography.SubHeader style={[styles.sectionTitle, { marginTop: Spacing.xl }]}>RECENT EXPENSES</Typography.SubHeader>
+        {/* Last Activity Section */}
+        <Typography.SubHeader style={[styles.sectionTitle, { marginTop: Spacing.xl }]}>
+          LAST ACTIVITY
+        </Typography.SubHeader>
         {expenses.length === 0 ? (
-          <Typography.Caption style={styles.emptyText}>No expenses yet.</Typography.Caption>
+          <Typography.Caption style={styles.emptyText}>No activity yet.</Typography.Caption>
         ) : (
-          expenses.map(exp => (
-            <TouchableOpacity
-              key={exp.expense_id}
-              activeOpacity={0.7}
-              onPress={() =>
-                router.push({
-                  pathname: '/expense/view',
-                  params: {
-                    expenseId: exp.expense_id,
-                    expense: JSON.stringify(exp),
-                  },
-                })
-              }
-            >
+          expenses.slice(0, 10).map(exp => {
+            const isSettleUp  = exp.expense_type === 'settle-up';
+            const isDeleted   = exp.is_deleted === true;
+            const payerName   = getDisplayName(exp.paid_by, memberLookup);
+            const deleterName = exp.deleted_by ? getDisplayName(exp.deleted_by, memberLookup) : 'Someone';
+            const relativeDate = getRelativeTime(
+              (isDeleted ? exp.deleted_at : exp.expense_date) || exp.created_at
+            );
+
+            const cardContent = (
               <Card style={styles.expenseCard}>
-                <View style={styles.receiptIcon}>
-                  <Receipt size={20} color={Colors.primary} />
+                <View style={
+                  isDeleted  ? styles.deletedIcon :
+                  isSettleUp ? styles.settleIcon  :
+                               styles.receiptIcon
+                }>
+                  {isDeleted  && <Trash2      size={20} color="#94A3B8" />}
+                  {isSettleUp && <CheckCircle size={20} color="#22C55E" />}
+                  {!isDeleted && !isSettleUp && <Receipt size={20} color={Colors.primary} />}
                 </View>
                 <View style={styles.expenseInfo}>
-                  <Typography.Body style={styles.expenseDesc}>{exp.title}</Typography.Body>
-                  <Typography.Caption>{new Date(exp.expense_date || exp.created_at).toLocaleDateString()}</Typography.Caption>
+                  <Typography.Body style={[styles.expenseDesc, isDeleted && { color: Colors.textSecondary }]}>
+                    {isDeleted  ? `${deleterName} deleted an expense` :
+                     isSettleUp ? `${payerName} settled up`           :
+                                   exp.title}
+                  </Typography.Body>
+                  <Typography.Caption style={styles.activityMeta}>
+                    {isDeleted  ? `${exp.title} · ${relativeDate}` :
+                     isSettleUp ? relativeDate                      :
+                                  `Paid by ${payerName} · ${relativeDate}`}
+                  </Typography.Caption>
                 </View>
-                <Typography.Body style={styles.expenseAmount}>{formatCurrency(Number(exp.total_amount) || 0)}</Typography.Body>
+                <Typography.Body style={[
+                  styles.expenseAmount,
+                  isSettleUp && styles.settleAmount,
+                  isDeleted  && styles.deletedAmount,
+                ]}>
+                  {formatCurrency(Number(exp.total_amount) || 0)}
+                </Typography.Body>
               </Card>
-            </TouchableOpacity>
-          ))
+            );
+
+            if (isSettleUp || isDeleted) {
+              return <View key={exp.expense_id}>{cardContent}</View>;
+            }
+
+            return (
+              <TouchableOpacity
+                key={exp.expense_id}
+                activeOpacity={0.7}
+                onPress={() =>
+                  router.push({
+                    pathname: '/expense/view',
+                    params: {
+                      expenseId: exp.expense_id,
+                      expense: JSON.stringify(exp),
+                    },
+                  })
+                }
+              >
+                {cardContent}
+              </TouchableOpacity>
+            );
+          })
         )}
 
         {/* Members Section */}
@@ -398,4 +460,32 @@ const styles = StyleSheet.create({
   avatarText: { fontWeight: '700', color: Colors.primary },
   memberName: { textAlign: 'center', fontSize: 11 },
   addMemberBtn: { width: 50, height: 50, borderRadius: 25, borderStyle: 'dashed', borderWidth: 1.5, borderColor: Colors.primary, justifyContent: 'center', alignItems: 'center' },
+  settleIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    backgroundColor: '#F0FDF4',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: Spacing.md,
+  },
+  settleAmount: {
+    color: '#22C55E',
+  },
+  activityMeta: {
+    color: Colors.textSecondary,
+    marginTop: 1,
+  },
+  deletedIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    backgroundColor: '#F1F5F9',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: Spacing.md,
+  },
+  deletedAmount: {
+    color: Colors.textSecondary,
+  },
 });

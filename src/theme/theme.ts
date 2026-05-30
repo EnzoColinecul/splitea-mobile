@@ -1,15 +1,15 @@
 export const Colors = {
-  primary: '#FF7A00', // Vibrant Orange
-  primaryDark: '#E66A00',
-  secondary: '#8BC34A', // Soft Green for positive balance
-  danger: '#E74C3C',
-  background: '#FFFFFF', // Pure white as requested
-  white: '#FFFFFF',
-  text: '#2D261B', // Darker, warmer text
-  textSecondary: '#6B7280', // Better gray for secondary text
-  border: '#E2E8F0', // Slightly more visible gray border
-  itemBorder: '#F0EBE1', // Warm border for cards
-  cardShadow: 'rgba(0,0,0,0.06)',
+  primary: "#FF7A00", // Vibrant Orange
+  primaryDark: "#E66A00",
+  secondary: "#8BC34A", // Soft Green for positive balance
+  danger: "#E74C3C",
+  background: "#F8FAFC", // Very light slate/blue hint for contrast
+  white: "#FFFFFF",
+  text: "#2D261B", // Darker, warmer text
+  textSecondary: "#6B7280", // Better gray for secondary text
+  border: "#E2E8F0", // Slightly more visible gray border
+  itemBorder: "#F0EBE1", // Warm border for cards
+  cardShadow: "rgba(0,0,0,0.06)",
 };
 
 export const Spacing = {

@@ -1,8 +1,9 @@
-import { useRouter, useSegments } from 'expo-router';
-import * as SecureStore from 'expo-secure-store';
-import React, { createContext, useContext, useEffect, useState } from 'react';
-import { userApi } from '@/api/user';
-import { authEvents } from '@/utils/auth-events';
+import { userApi } from "@/api/user";
+import { authEvents } from "@/utils/auth-events";
+import { useRouter, useSegments } from "expo-router";
+import * as SecureStore from "expo-secure-store";
+import React, { createContext, useContext, useEffect, useState } from "react";
+import { Platform } from "react-native";
 
 interface AuthContextType {
   token: string | null;
@@ -27,7 +28,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     // Listen for global unauthorized events
     const unsubscribe = authEvents.subscribe(() => {
-      console.warn('Unauthorized event received, signing out');
+      console.warn("Unauthorized event received, signing out");
       signOut();
     });
     return unsubscribe;
@@ -36,20 +37,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (isLoading) return;
 
-    const inAuthGroup = segments[0] === '(auth)';
+    const inAuthGroup = segments[0] === "(auth)";
 
     if (!token && !inAuthGroup) {
       // Redirect to login if not authenticated and not in auth screens
-      router.replace('/(auth)/login');
+      router.replace("/(auth)/login");
     } else if (token && inAuthGroup) {
       // Redirect to home if authenticated and trying to access auth screens
-      router.replace('/(tabs)');
+      router.replace("/(tabs)");
     }
   }, [token, segments, isLoading]);
 
   async function loadToken() {
     try {
-      const storedToken = await SecureStore.getItemAsync('userToken');
+      const storedToken =
+        Platform.OS === "web"
+          ? localStorage.getItem("userToken")
+          : await SecureStore.getItemAsync("userToken");
       if (storedToken) {
         // Verify token with backend
         try {
@@ -57,8 +61,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           setToken(storedToken);
         } catch (error: any) {
           if (error.response?.status === 401) {
-            console.warn('Token invalid, clearing storage');
-            await SecureStore.deleteItemAsync('userToken');
+            console.warn("Token invalid, clearing storage");
+            Platform.OS === "web"
+              ? localStorage.removeItem("userToken")
+              : await SecureStore.deleteItemAsync("userToken");
             setToken(null);
           } else {
             // On other errors (e.g. network), assume token might still be valid
@@ -70,19 +76,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setToken(null);
       }
     } catch (e) {
-      console.error('Failed to load token', e);
+      console.error("Failed to load token", e);
     } finally {
       setIsLoading(false);
     }
   }
 
   const signIn = async (newToken: string) => {
-    await SecureStore.setItemAsync('userToken', newToken);
+    Platform.OS === "web"
+      ? localStorage.setItem("userToken", newToken)
+      : await SecureStore.setItemAsync("userToken", newToken);
     setToken(newToken);
   };
 
   const signOut = async () => {
-    await SecureStore.deleteItemAsync('userToken');
+    Platform.OS === "web"
+      ? localStorage.removeItem("userToken")
+      : await SecureStore.deleteItemAsync("userToken");
     setToken(null);
   };
 
@@ -96,7 +106,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 export function useAuth() {
   const context = useContext(AuthContext);
   if (!context) {
-    throw new Error('useAuth must be used within an AuthProvider');
+    throw new Error("useAuth must be used within an AuthProvider");
   }
   return context;
 }

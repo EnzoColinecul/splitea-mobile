@@ -1,7 +1,10 @@
 import { friendsApi, groupsApi } from '@/api/social';
+import { Avatar } from '@/components/common/avatar';
 import { BusyOverlay, Button, Typography } from '@/components/common/shared';
+import { GroupPicturePicker, GroupPicturePickerValue } from '@/components/groups/group-picture-picker';
 import { Colors, Spacing } from '@/theme/theme';
 import { Friend } from '@/types';
+import { uploadImageToS3 } from '@/utils/upload';
 import { Stack, useRouter } from 'expo-router';
 import { CheckCircle, ChevronLeft } from 'lucide-react-native';
 import React, { useEffect, useState } from 'react';
@@ -17,6 +20,7 @@ export default function CreateGroupScreen() {
   const [selectedFriendIds, setSelectedFriendIds] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState(false);
+  const [picture, setPicture] = useState<GroupPicturePickerValue>({});
   const isBusy = creating;
 
   useEffect(() => {
@@ -50,7 +54,22 @@ export default function CreateGroupScreen() {
 
     setCreating(true);
     try {
-      const group = await groupsApi.create({ name, description });
+      const group = await groupsApi.create({
+        name,
+        description,
+        emoji: picture.emoji || null,
+      });
+
+      if (picture.pictureLocalUri) {
+        try {
+          const filename = `group_${Date.now()}.jpg`;
+          const presigned = await groupsApi.getUploadUrl(group.group_id, filename);
+          await uploadImageToS3(picture.pictureLocalUri, presigned.upload_url);
+          await groupsApi.update(group.group_id, { picture_s3_key: presigned.object_key });
+        } catch (e) {
+          console.warn('Failed to upload group picture', e);
+        }
+      }
 
       if (selectedFriendIds.length > 0) {
         await groupsApi.addFriends(group.group_id, selectedFriendIds);
@@ -81,6 +100,8 @@ export default function CreateGroupScreen() {
       <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled" scrollEnabled={!isBusy}>
         <View style={styles.section}>
           <Typography.Header style={styles.mainTitle}>Create Group</Typography.Header>
+
+          <GroupPicturePicker name={name || 'Group'} value={picture} onChange={setPicture} />
 
           <View style={styles.inputGroup}>
             <Text style={styles.label}>Group Name</Text>
@@ -125,8 +146,8 @@ export default function CreateGroupScreen() {
                   onPress={() => toggleFriend(friend.user_id)}
                   disabled={isBusy}
                 >
-                  <View style={styles.avatar}>
-                    <Text style={styles.avatarText}>{friend.first_name.charAt(0)}</Text>
+                  <View style={{ marginRight: Spacing.md }}>
+                    <Avatar imageUrl={friend.avatar_url} name={friend.first_name} size={44} />
                   </View>
                   <View style={{ flex: 1 }}>
                     <Text style={styles.friendName}>{friend.first_name} {friend.last_name}</Text>

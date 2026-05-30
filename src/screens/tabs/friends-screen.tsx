@@ -1,13 +1,19 @@
-import React, { useEffect, useState, useCallback } from 'react';
-import { ActivityIndicator, Alert, SafeAreaView, ScrollView, StyleSheet, TextInput, TouchableOpacity, View, RefreshControl } from 'react-native';
+import React, { useCallback, useEffect, useState } from 'react';
+import { ActivityIndicator, Alert, RefreshControl, SafeAreaView, ScrollView, StyleSheet, TextInput, TouchableOpacity, View } from 'react-native';
+import { Avatar } from '@/components/common/avatar';
 import { Card, Typography } from '@/components/common/shared';
 import { BorderRadius, Colors, Spacing } from '@/theme/theme';
 import { friendsApi } from '@/api/social';
 import { Friend } from '@/types';
-import { Search, UserPlus, UserCheck, X } from 'lucide-react-native';
+import { useRouter } from 'expo-router';
+import { Search, UserCheck, UserPlus, X } from 'lucide-react-native';
 import { debounce } from 'lodash';
 
+const formatCurrency = (amt: number) =>
+  `$${Math.abs(amt).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+
 export default function FriendsScreen() {
+  const router = useRouter();
   const [friends, setFriends] = useState<Friend[]>([]);
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -131,10 +137,8 @@ export default function FriendsScreen() {
               <View style={styles.list}>
                 {searchResults.map((user) => (
                   <Card key={user.user_id} style={styles.friendCard}>
-                    <View style={[styles.avatarPlaceholder, { backgroundColor: '#F3F4F6' }]}>
-                      <Typography.Body style={{ color: Colors.text, fontWeight: 'bold' }}>
-                        {user.first_name.charAt(0)}
-                      </Typography.Body>
+                    <View style={{ marginRight: Spacing.md }}>
+                      <Avatar imageUrl={user.avatar_url} name={user.first_name} size={48} />
                     </View>
                     <View style={styles.friendInfo}>
                       <Typography.Body style={styles.friendName}>{`${user.first_name} ${user.last_name}`}</Typography.Body>
@@ -176,21 +180,42 @@ export default function FriendsScreen() {
               </View>
             ) : (
               <View style={styles.list}>
-                {friends.map((friend) => (
-                  <Card key={friend.user_id} style={styles.friendCard}>
-                    <View style={[styles.avatarPlaceholder, { backgroundColor: '#F0FDF4' }]}>
-                      <Typography.Body style={{ color: '#15803D', fontWeight: 'bold' }}>
-                        {(friend.first_name || 'U').charAt(0)}
-                      </Typography.Body>
-                    </View>
-                    <View style={styles.friendInfo}>
-                      <Typography.Body style={styles.friendName}>
-                        {friend.first_name} {friend.last_name}
-                      </Typography.Body>
-                      <Typography.Caption>{friend.email}</Typography.Caption>
-                    </View>
-                  </Card>
-                ))}
+                {friends.map((friend) => {
+                  const net = friend.net_balance ?? 0;
+                  const balanceColor =
+                    net > 0.005 ? Colors.secondary : net < -0.005 ? Colors.danger : Colors.textSecondary;
+                  const balanceLabel =
+                    net > 0.005 ? 'owes you' : net < -0.005 ? 'you owe' : 'settled';
+                  return (
+                    <TouchableOpacity
+                      key={friend.user_id}
+                      activeOpacity={0.85}
+                      onPress={() =>
+                        router.push({ pathname: '/user-activity', params: { userId: friend.user_id } })
+                      }
+                    >
+                      <Card style={styles.friendCard}>
+                        <View style={{ marginRight: Spacing.md }}>
+                          <Avatar imageUrl={friend.avatar_url} name={friend.first_name} size={48} />
+                        </View>
+                        <View style={styles.friendInfo}>
+                          <Typography.Body style={styles.friendName}>
+                            {friend.first_name} {friend.last_name}
+                          </Typography.Body>
+                          <Typography.Caption>{friend.email}</Typography.Caption>
+                        </View>
+                        <View style={{ alignItems: 'flex-end' }}>
+                          <Typography.Caption style={[styles.balanceLabel, { color: balanceColor }]}>
+                            {balanceLabel}
+                          </Typography.Caption>
+                          <Typography.Body style={[styles.balanceAmount, { color: balanceColor }]}>
+                            {Math.abs(net) > 0.005 ? formatCurrency(net) : '—'}
+                          </Typography.Body>
+                        </View>
+                      </Card>
+                    </TouchableOpacity>
+                  );
+                })}
               </View>
             )}
           </>
@@ -262,9 +287,11 @@ const styles = StyleSheet.create({
     paddingVertical: Spacing.xl,
     alignItems: 'center',
   },
-  emptyText: { 
-    color: Colors.textSecondary, 
+  emptyText: {
+    color: Colors.textSecondary,
     textAlign: 'center',
     marginTop: Spacing.md,
-  }
+  },
+  balanceLabel: { fontSize: 11, fontWeight: '600', textTransform: 'uppercase', letterSpacing: 0.5 },
+  balanceAmount: { fontSize: 15, fontWeight: '700', marginTop: 2 },
 });

@@ -4,7 +4,7 @@
     "slug": "splitea-mobile",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/icon.png",
+    "icon": "./assets/images/splitea-min.png",
     "scheme": "spliteamobile",
     "userInterfaceStyle": "automatic",
     "splash": {

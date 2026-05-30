@@ -95,6 +95,7 @@ export default function DashboardScreen() {
       color: '#FF7A00', // Primary Orange
       caption: balanceLabel,
       icon: Wallet,
+      filter: 'net' as const,
     },
     {
       key: 'owed',
@@ -103,6 +104,7 @@ export default function DashboardScreen() {
       color: '#4CAF50', // Success Green
       caption: 'Collect from friends',
       icon: ArrowDownLeft,
+      filter: 'owed' as const,
     },
     {
       key: 'owe',
@@ -111,6 +113,7 @@ export default function DashboardScreen() {
       color: '#E53935', // Danger Red
       caption: 'Settle soon to stay even',
       icon: ArrowUpRight,
+      filter: 'owing' as const,
     },
   ];
 
@@ -163,38 +166,39 @@ export default function DashboardScreen() {
             onMomentumScrollEnd={handleBalanceScroll}
           >
             {balanceCards.map((card, index) => (
-              <Card
+              <TouchableOpacity
                 key={card.key}
-                style={[
-                  styles.summaryCard,
-                  { width: cardWidth, marginRight: index === balanceCards.length - 1 ? 0 : Spacing.md },
-                ]}
+                activeOpacity={0.85}
+                onPress={() => router.push({ pathname: '/balance-detail', params: { filter: card.filter } })}
+                style={{ width: cardWidth, marginRight: index === balanceCards.length - 1 ? 0 : Spacing.md }}
               >
-                {/* Accent Pill */}
-                <View style={[styles.accentPill, { backgroundColor: card.color }]} />
+                <Card style={styles.summaryCard}>
+                  {/* Accent Pill */}
+                  <View style={[styles.accentPill, { backgroundColor: card.color }]} />
 
-                <View style={styles.cardHeader}>
-                  <View style={[styles.iconCircleMinimal, { backgroundColor: `${card.color}15` }]}>
-                    <card.icon size={20} color={card.color} strokeWidth={2.5} />
+                  <View style={styles.cardHeader}>
+                    <View style={[styles.iconCircleMinimal, { backgroundColor: `${card.color}15` }]}>
+                      <card.icon size={20} color={card.color} strokeWidth={2.5} />
+                    </View>
+                    <Typography.Body style={styles.cardHeaderText}>{card.label}</Typography.Body>
                   </View>
-                  <Typography.Body style={styles.cardHeaderText}>{card.label}</Typography.Body>
-                </View>
 
-                <View style={styles.amountContainer}>
-                  <Text
-                    adjustsFontSizeToFit
-                    minimumFontScale={0.5}
-                    numberOfLines={1}
-                    style={styles.amountText}
-                  >
-                    {formatCurrency(card.amount)}
-                  </Text>
-                </View>
+                  <View style={styles.amountContainer}>
+                    <Text
+                      adjustsFontSizeToFit
+                      minimumFontScale={0.5}
+                      numberOfLines={1}
+                      style={styles.amountText}
+                    >
+                      {formatCurrency(card.amount)}
+                    </Text>
+                  </View>
 
-                <View style={styles.cardFooter}>
-                  <Typography.Caption style={styles.cardFooterText}>{card.caption}</Typography.Caption>
-                </View>
-              </Card>
+                  <View style={styles.cardFooter}>
+                    <Typography.Caption style={styles.cardFooterText}>{card.caption}</Typography.Caption>
+                  </View>
+                </Card>
+              </TouchableOpacity>
             ))}
           </ScrollView>
 
@@ -226,6 +230,8 @@ export default function DashboardScreen() {
             expenses.map((activity, idx) => {
               const amountOwed = activity.splits?.find((s: any) => s.user_id === user?.user_id)?.amount_owed || 0;
               const isPayer = activity.paid_by === user?.user_id;
+              const isSettleUp = activity.expense_type === 'settle-up';
+              const settleAmount = Number(activity.total_amount || 0);
 
               return (
                 <View key={activity.expense_id || idx}>
@@ -233,11 +239,21 @@ export default function DashboardScreen() {
                     <View style={styles.activityInfo}>
                       <Typography.Body style={styles.activityName}>{activity.title}</Typography.Body>
                       <Typography.Caption style={styles.activityDesc}>
-                        {isPayer ? 'You paid' : `${activity.payer_name || 'Someone'} paid`}
+                        {isSettleUp
+                          ? isPayer
+                            ? 'You settled up'
+                            : `${activity.payer_name || 'They'} settled up`
+                          : isPayer
+                            ? 'You paid'
+                            : `${activity.payer_name || 'Someone'} paid`}
                       </Typography.Caption>
                     </View>
                     <View style={styles.activityAmountContainer}>
-                      {isPayer ? (
+                      {isSettleUp ? (
+                        <Typography.Body style={[styles.activityAmount, { color: Colors.textSecondary }]}>
+                          {isPayer ? 'You paid' : 'You received'} {formatCurrency(settleAmount)}
+                        </Typography.Body>
+                      ) : isPayer ? (
                         <Typography.Body style={[styles.activityAmount, { color: Colors.secondary }]}>
                           You are owed {formatCurrency(activity.total_amount - amountOwed)}
                         </Typography.Body>
