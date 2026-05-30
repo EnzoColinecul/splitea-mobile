@@ -21,6 +21,7 @@ const EMOJI_CHOICES = [
 export type GroupPicturePickerValue = {
   emoji?: string | null;
   pictureLocalUri?: string | null;
+  pictureMimeType?: string | null;
   pictureUrl?: string | null;
   pictureS3Key?: string | null;
 };
@@ -43,15 +44,17 @@ export function GroupPicturePicker({ name, value, onChange }: Props) {
       return;
     }
     const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      mediaTypes: ['images'],
       allowsEditing: true,
       aspect: [1, 1],
       quality: 0.8,
     });
     if (!result.canceled && result.assets[0]) {
+      const asset = result.assets[0];
       onChange({
         emoji: null,
-        pictureLocalUri: result.assets[0].uri,
+        pictureLocalUri: asset.uri,
+        pictureMimeType: asset.mimeType ?? null,
         pictureUrl: null,
         pictureS3Key: null,
       });
@@ -79,7 +82,13 @@ export function GroupPicturePicker({ name, value, onChange }: Props) {
           {(previewImage || value.emoji) && (
             <TouchableOpacity
               onPress={() =>
-                onChange({ emoji: null, pictureLocalUri: null, pictureUrl: null, pictureS3Key: null })
+                onChange({
+                  emoji: null,
+                  pictureLocalUri: null,
+                  pictureMimeType: null,
+                  pictureUrl: null,
+                  pictureS3Key: null,
+                })
               }
             >
               <Text style={styles.clearText}>Reset to initial</Text>
@@ -116,6 +125,7 @@ export function GroupPicturePicker({ name, value, onChange }: Props) {
                 onChange({
                   emoji: e,
                   pictureLocalUri: null,
+                  pictureMimeType: null,
                   pictureUrl: null,
                   pictureS3Key: null,
                 })

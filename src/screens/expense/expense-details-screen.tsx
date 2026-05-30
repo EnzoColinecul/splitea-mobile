@@ -102,7 +102,7 @@ export default function ExpenseDetailsScreen() {
       setBusyLabel('Uploading receipt...');
       const eventId = v4();
       const filename = `receipt_manual_${Date.now()}.jpg`;
-      const { upload_url, object_key } = await expensesApi.getPresignedUrl(eventId, filename);
+      const { upload_url, object_key } = await expensesApi.getPresignedUrl(eventId, 'receipt', filename);
       const blob = await (await fetch(uri)).blob();
       await fetch(upload_url, { method: 'PUT', body: blob, headers: { 'Content-Type': 'image/jpeg' } });
       setReceiptUrl(object_key);

@@ -8,14 +8,16 @@ export interface MemberDisplay {
 
 export const formatCurrency = (amount: number = 0, currencySymbol = '$') => {
   const safeAmount = Number.isFinite(amount) ? amount : 0;
+  const sign = safeAmount < 0 ? '-' : '';
+  const abs = Math.abs(safeAmount);
 
   try {
-    return `${currencySymbol}${safeAmount.toLocaleString('en-US', {
+    return `${sign}${currencySymbol}${abs.toLocaleString('en-US', {
       minimumFractionDigits: 2,
       maximumFractionDigits: 2,
     })}`;
   } catch (error) {
-    return `${currencySymbol}${safeAmount.toFixed(2)}`;
+    return `${sign}${currencySymbol}${abs.toFixed(2)}`;
   }
 };
 

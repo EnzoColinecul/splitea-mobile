@@ -4,6 +4,7 @@ import { notificationApi } from '@/api/notifications';
 import { Card, Typography } from '@/components/common/shared';
 import { Colors, Spacing } from '@/theme/theme';
 import { DashboardSummary, User } from '@/types';
+import { formatCurrency } from '@/utils/expense-display';
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import { ArrowDownLeft, ArrowUpRight, Bell, Wallet } from 'lucide-react-native';
@@ -51,16 +52,6 @@ export default function DashboardScreen() {
     setRefreshing(true);
     fetchData();
   }, []);
-
-  const formatCurrency = (amt: number = 0) => {
-    try {
-      if (typeof amt !== 'number') return '$0.00';
-      return `$${amt.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-    } catch (e) {
-      // Fallback for environments where toLocaleString fails with options
-      return `$${amt.toFixed(2)}`;
-    }
-  };
 
   const getTimeAgo = (dateStr: string) => {
     const date = new Date(dateStr);

@@ -279,8 +279,8 @@ export default function GroupDetailScreen() {
                   isSettleUp ? styles.settleIcon  :
                                styles.receiptIcon
                 }>
-                  {isDeleted  && <Trash2      size={20} color="#94A3B8" />}
-                  {isSettleUp && <CheckCircle size={20} color="#22C55E" />}
+                  {isDeleted  && <Trash2      size={20} color={Colors.textSecondary} />}
+                  {isSettleUp && <CheckCircle size={20} color={Colors.success} />}
                   {!isDeleted && !isSettleUp && <Receipt size={20} color={Colors.primary} />}
                 </View>
                 <View style={styles.expenseInfo}>
@@ -456,7 +456,7 @@ const styles = StyleSheet.create({
 
   memberList: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.md, marginTop: Spacing.sm },
   memberItem: { alignItems: 'center', width: 60 },
-  memberAvatar: { width: 50, height: 50, borderRadius: 25, backgroundColor: '#F1F5F9', justifyContent: 'center', alignItems: 'center', marginBottom: 4 },
+  memberAvatar: { width: 50, height: 50, borderRadius: 25, backgroundColor: Colors.surfaceMuted, justifyContent: 'center', alignItems: 'center', marginBottom: 4 },
   avatarText: { fontWeight: '700', color: Colors.primary },
   memberName: { textAlign: 'center', fontSize: 11 },
   addMemberBtn: { width: 50, height: 50, borderRadius: 25, borderStyle: 'dashed', borderWidth: 1.5, borderColor: Colors.primary, justifyContent: 'center', alignItems: 'center' },
@@ -464,13 +464,13 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 12,
-    backgroundColor: '#F0FDF4',
+    backgroundColor: Colors.successSoft,
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: Spacing.md,
   },
   settleAmount: {
-    color: '#22C55E',
+    color: Colors.success,
   },
   activityMeta: {
     color: Colors.textSecondary,
@@ -480,7 +480,7 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 12,
-    backgroundColor: '#F1F5F9',
+    backgroundColor: Colors.surfaceMuted,
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: Spacing.md,

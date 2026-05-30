@@ -4,7 +4,7 @@ import { BusyOverlay, Button, Input, Typography } from '@/components/common/shar
 import { BorderRadius, Colors, Spacing } from '@/theme/theme';
 import { User } from '@/types';
 import { GlobalEvents } from '@/utils/events';
-import { uploadImageToS3 } from '@/utils/upload';
+import { extensionForMime, resolveImageMime, uploadImageToS3 } from '@/utils/upload';
 import * as ImagePicker from 'expo-image-picker';
 import { Stack, useRouter } from 'expo-router';
 import { Camera, ChevronLeft, ChevronRight, CreditCard, Globe } from 'lucide-react-native';
@@ -59,7 +59,7 @@ export default function ProfileSettingsScreen() {
       return;
     }
     const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      mediaTypes: ['images'],
       allowsEditing: true,
       aspect: [1, 1],
       quality: 0.85,
@@ -68,10 +68,11 @@ export default function ProfileSettingsScreen() {
 
     try {
       setUploadingPhoto(true);
-      const localUri = result.assets[0].uri;
-      const filename = `avatar_${Date.now()}.jpg`;
-      const presigned = await userApi.getUploadUrl(filename);
-      await uploadImageToS3(localUri, presigned.upload_url);
+      const asset = result.assets[0];
+      const mimeType = resolveImageMime(asset);
+      const filename = `avatar_${Date.now()}.${extensionForMime(mimeType)}`;
+      const presigned = await userApi.getUploadUrl(filename, mimeType);
+      await uploadImageToS3(asset.uri, presigned.upload_url, mimeType);
       const updated = await userApi.updateProfile({ avatar_s3_key: presigned.object_key });
       setUser(updated);
     } catch (e) {

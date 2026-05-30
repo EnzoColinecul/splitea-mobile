@@ -3,7 +3,7 @@ import { BusyOverlay, Button, Typography } from '@/components/common/shared';
 import { GroupPicturePicker, GroupPicturePickerValue } from '@/components/groups/group-picture-picker';
 import { Colors, Spacing } from '@/theme/theme';
 import { Group } from '@/types';
-import { uploadImageToS3 } from '@/utils/upload';
+import { extensionForMime, resolveImageMime, uploadImageToS3 } from '@/utils/upload';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { ChevronLeft } from 'lucide-react-native';
 import React, { useEffect, useState } from 'react';
@@ -63,9 +63,13 @@ export default function EditGroupScreen() {
 
       let pictureS3Key: string | null | undefined = undefined;
       if (picture.pictureLocalUri) {
-        const filename = `group_${Date.now()}.jpg`;
-        const presigned = await groupsApi.getUploadUrl(groupId, filename);
-        await uploadImageToS3(picture.pictureLocalUri, presigned.upload_url);
+        const mimeType = resolveImageMime({
+          mimeType: picture.pictureMimeType,
+          uri: picture.pictureLocalUri,
+        });
+        const filename = `group_${Date.now()}.${extensionForMime(mimeType)}`;
+        const presigned = await groupsApi.getUploadUrl(groupId, filename, mimeType);
+        await uploadImageToS3(picture.pictureLocalUri, presigned.upload_url, mimeType);
         pictureS3Key = presigned.object_key;
       } else if (picture.emoji) {
         pictureS3Key = null;

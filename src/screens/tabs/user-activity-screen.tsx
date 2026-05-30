@@ -1,10 +1,11 @@
-import apiClient from '@/api/api-client';
 import { expensesApi } from '@/api/expenses';
 import { friendsApi } from '@/api/social';
+import { userApi } from '@/api/user';
 import { Avatar } from '@/components/common/avatar';
 import { Button, Card, Typography } from '@/components/common/shared';
 import { BorderRadius, Colors, Spacing } from '@/theme/theme';
 import { ActivityItem, Friend, UserActivityResponse, User } from '@/types';
+import { formatCurrency } from '@/utils/expense-display';
 import { useFocusEffect } from '@react-navigation/native';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { ArrowDownLeft, ArrowUpRight, CheckCircle2, ChevronLeft } from 'lucide-react-native';
@@ -19,14 +20,6 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-
-const formatCurrency = (amt: number, currency: string = 'USD') => {
-  const sign = amt < 0 ? '-' : '';
-  return `${sign}$${Math.abs(amt).toLocaleString('en-US', {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  })}`;
-};
 
 const formatDate = (iso: string) => {
   try {
@@ -49,12 +42,12 @@ export default function UserActivityScreen() {
   const fetchData = useCallback(async () => {
     if (!userId) return;
     try {
-      const [profileRes, friends, activity] = await Promise.all([
-        apiClient.get<User>('/user/profile'),
+      const [profile, friends, activity] = await Promise.all([
+        userApi.getProfile(),
         friendsApi.list(),
         expensesApi.getUserActivity(userId, { limit: 100 }),
       ]);
-      setMe(profileRes.data);
+      setMe(profile);
       setFriend(friends.find((f) => f.user_id === userId) || null);
       setData(activity);
     } catch (e) {
@@ -198,7 +191,7 @@ function ActivityRow({ item, meId }: { item: ActivityItem; meId: string }) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F8FAFC' },
+  container: { flex: 1, backgroundColor: Colors.background },
   scroll: { padding: Spacing.lg, gap: Spacing.lg },
   headerBar: {
     flexDirection: 'row',

@@ -67,6 +67,7 @@ export default function ExpenseViewScreen() {
   const [receiptVisible, setReceiptVisible] = useState(false);
   const [receiptPresignedUrl, setReceiptPresignedUrl] = useState<string | null>(null);
   const [receiptLoading, setReceiptLoading] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -124,7 +125,7 @@ export default function ExpenseViewScreen() {
   const paidByName = expense ? getDisplayName(expense.paid_by, memberLookup) : 'Member';
 
   const handleDeleteExpense = () => {
-    if (!expense) return;
+    if (!expense || deleting) return;
     Alert.alert(
       'Delete expense',
       'This will be recorded in the group activity. Are you sure?',
@@ -134,11 +135,18 @@ export default function ExpenseViewScreen() {
           text: 'Delete',
           style: 'destructive',
           onPress: async () => {
+            if (deleting) return;
+            setDeleting(true);
             try {
               await expensesApi.deleteExpense(expense.expense_id);
               router.back();
-            } catch {
-              Alert.alert('Error', 'Could not delete this expense.');
+            } catch (error: any) {
+              const detail =
+                error?.response?.data?.detail ||
+                error?.message ||
+                'Could not delete this expense.';
+              Alert.alert('Error', detail);
+              setDeleting(false);
             }
           },
         },
@@ -192,8 +200,16 @@ export default function ExpenseViewScreen() {
         </TouchableOpacity>
         <Typography.SubHeader style={styles.headerTitle}>Expense Details</Typography.SubHeader>
         {currentUser && expense && currentUser.user_id === expense.paid_by ? (
-          <TouchableOpacity onPress={handleDeleteExpense} style={styles.deleteBtn}>
-            <Trash2 size={22} color="#E53935" />
+          <TouchableOpacity
+            onPress={handleDeleteExpense}
+            style={styles.deleteBtn}
+            disabled={deleting}
+          >
+            {deleting ? (
+              <ActivityIndicator size="small" color={Colors.danger} />
+            ) : (
+              <Trash2 size={22} color={Colors.danger} />
+            )}
           </TouchableOpacity>
         ) : (
           <View style={styles.headerSpacer} />
@@ -363,7 +379,7 @@ export default function ExpenseViewScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F8FAFC' },
+  container: { flex: 1, backgroundColor: Colors.background },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   header: {
     flexDirection: 'row',

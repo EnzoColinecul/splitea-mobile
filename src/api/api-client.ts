@@ -25,10 +25,14 @@ apiClient.interceptors.request.use(async (config) => {
   }
 
   try {
-    const token =
-      Platform.OS === "web"
-        ? localStorage.getItem("userToken")
-        : await SecureStore.getItemAsync("userToken");
+    let token: string | null = null;
+    if (Platform.OS === "web") {
+      if (typeof window !== "undefined" && typeof window.localStorage !== "undefined") {
+        token = window.localStorage.getItem("userToken");
+      }
+    } else {
+      token = await SecureStore.getItemAsync("userToken");
+    }
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }

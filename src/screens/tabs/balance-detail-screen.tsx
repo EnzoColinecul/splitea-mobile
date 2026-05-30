@@ -3,6 +3,7 @@ import { Avatar } from '@/components/common/avatar';
 import { Card, Typography } from '@/components/common/shared';
 import { BorderRadius, Colors, Spacing } from '@/theme/theme';
 import { FriendBalance, FriendBalanceListResponse } from '@/types';
+import { formatCurrency } from '@/utils/expense-display';
 import { useFocusEffect } from '@react-navigation/native';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { ChevronLeft, ChevronRight } from 'lucide-react-native';
@@ -23,14 +24,6 @@ const TITLE_MAP: Record<Filter, string> = {
   net: 'Net Balance',
   owed: 'You are Owed',
   owing: 'You Owe',
-};
-
-const formatCurrency = (amt: number) => {
-  const sign = amt < 0 ? '-' : '';
-  return `${sign}$${Math.abs(amt).toLocaleString('en-US', {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  })}`;
 };
 
 export default function BalanceDetailScreen() {
@@ -179,7 +172,7 @@ export default function BalanceDetailScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F8FAFC' },
+  container: { flex: 1, backgroundColor: Colors.background },
   scroll: { padding: Spacing.lg, gap: Spacing.lg },
   header: {
     flexDirection: 'row',

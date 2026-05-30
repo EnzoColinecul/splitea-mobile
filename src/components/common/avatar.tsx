@@ -1,7 +1,7 @@
 import { Image } from 'expo-image';
 import { StyleSheet, Text, View } from 'react-native';
 
-import { BorderRadius, Colors } from '@/theme/theme';
+import { Colors } from '@/theme/theme';
 
 type Props = {
   imageUrl?: string | null;
@@ -17,7 +17,7 @@ export function Avatar({
   name,
   emoji,
   size = 40,
-  backgroundColor = '#F1F5F9',
+  backgroundColor = Colors.surfaceMuted,
   textColor = Colors.text,
 }: Props) {
   const radius = size / 2;
@@ -58,5 +58,3 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
 });
-
-export const AvatarStyles = { BorderRadius };

@@ -14,6 +14,34 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+const TOKEN_KEY = "userToken";
+
+const hasWebStorage = () =>
+  typeof window !== "undefined" && typeof window.localStorage !== "undefined";
+
+async function readToken(): Promise<string | null> {
+  if (Platform.OS === "web") {
+    return hasWebStorage() ? window.localStorage.getItem(TOKEN_KEY) : null;
+  }
+  return SecureStore.getItemAsync(TOKEN_KEY);
+}
+
+async function writeToken(token: string): Promise<void> {
+  if (Platform.OS === "web") {
+    if (hasWebStorage()) window.localStorage.setItem(TOKEN_KEY, token);
+    return;
+  }
+  await SecureStore.setItemAsync(TOKEN_KEY, token);
+}
+
+async function clearToken(): Promise<void> {
+  if (Platform.OS === "web") {
+    if (hasWebStorage()) window.localStorage.removeItem(TOKEN_KEY);
+    return;
+  }
+  await SecureStore.deleteItemAsync(TOKEN_KEY);
+}
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [token, setToken] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -50,10 +78,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   async function loadToken() {
     try {
-      const storedToken =
-        Platform.OS === "web"
-          ? localStorage.getItem("userToken")
-          : await SecureStore.getItemAsync("userToken");
+      const storedToken = await readToken();
       if (storedToken) {
         // Verify token with backend
         try {
@@ -62,9 +87,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         } catch (error: any) {
           if (error.response?.status === 401) {
             console.warn("Token invalid, clearing storage");
-            Platform.OS === "web"
-              ? localStorage.removeItem("userToken")
-              : await SecureStore.deleteItemAsync("userToken");
+            await clearToken();
             setToken(null);
           } else {
             // On other errors (e.g. network), assume token might still be valid
@@ -83,16 +106,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   const signIn = async (newToken: string) => {
-    Platform.OS === "web"
-      ? localStorage.setItem("userToken", newToken)
-      : await SecureStore.setItemAsync("userToken", newToken);
+    await writeToken(newToken);
     setToken(newToken);
   };
 
   const signOut = async () => {
-    Platform.OS === "web"
-      ? localStorage.removeItem("userToken")
-      : await SecureStore.deleteItemAsync("userToken");
+    await clearToken();
     setToken(null);
   };
 

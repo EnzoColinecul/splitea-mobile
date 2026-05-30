@@ -5,12 +5,10 @@ import { Card, Typography } from '@/components/common/shared';
 import { BorderRadius, Colors, Spacing } from '@/theme/theme';
 import { friendsApi } from '@/api/social';
 import { Friend } from '@/types';
+import { formatCurrency } from '@/utils/expense-display';
 import { useRouter } from 'expo-router';
 import { Search, UserCheck, UserPlus, X } from 'lucide-react-native';
 import { debounce } from 'lodash';
-
-const formatCurrency = (amt: number) =>
-  `$${Math.abs(amt).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
 export default function FriendsScreen() {
   const router = useRouter();
@@ -209,7 +207,7 @@ export default function FriendsScreen() {
                             {balanceLabel}
                           </Typography.Caption>
                           <Typography.Body style={[styles.balanceAmount, { color: balanceColor }]}>
-                            {Math.abs(net) > 0.005 ? formatCurrency(net) : '—'}
+                            {Math.abs(net) > 0.005 ? formatCurrency(Math.abs(net)) : '—'}
                           </Typography.Body>
                         </View>
                       </Card>
