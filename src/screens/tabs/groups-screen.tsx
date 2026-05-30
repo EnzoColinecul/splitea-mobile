@@ -1,11 +1,22 @@
 import { groupsApi } from '@/api/social';
+import { Avatar } from '@/components/common/avatar';
 import { Button, Typography } from '@/components/common/shared';
 import { BorderRadius, Colors, Spacing } from '@/theme/theme';
 import { Group } from '@/types';
+import { useFocusEffect } from '@react-navigation/native';
 import { useRouter } from 'expo-router';
-import { ChevronRight, Plus, Users } from 'lucide-react-native';
-import React, { useCallback, useEffect, useState } from 'react';
-import { ActivityIndicator, FlatList, RefreshControl, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ChevronRight, Pencil, Pin, PinOff, Plus, Users } from 'lucide-react-native';
+import React, { useCallback, useState } from 'react';
+import {
+  ActivityIndicator,
+  Alert,
+  FlatList,
+  RefreshControl,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function GroupsScreen() {
@@ -13,12 +24,9 @@ export default function GroupsScreen() {
   const [groups, setGroups] = useState<Group[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  
-  useEffect(() => {
-    fetchGroups();
-  }, []);
+  const [pinningId, setPinningId] = useState<string | null>(null);
 
-  const fetchGroups = async () => {
+  const fetchGroups = useCallback(async () => {
     try {
       const data = await groupsApi.list();
       setGroups(data);
@@ -28,27 +36,65 @@ export default function GroupsScreen() {
       setLoading(false);
       setRefreshing(false);
     }
-  };
+  }, []);
+
+  useFocusEffect(
+    useCallback(() => {
+      fetchGroups();
+    }, [fetchGroups])
+  );
 
   const onRefresh = useCallback(() => {
     setRefreshing(true);
     fetchGroups();
-  }, []);
+  }, [fetchGroups]);
+
+  const togglePin = async (group: Group) => {
+    try {
+      setPinningId(group.group_id);
+      if (group.is_pinned) {
+        await groupsApi.unpin(group.group_id);
+      } else {
+        await groupsApi.pin(group.group_id);
+      }
+      await fetchGroups();
+    } catch (e: any) {
+      Alert.alert('Error', e?.response?.data?.detail || 'Could not update pin.');
+    } finally {
+      setPinningId(null);
+    }
+  };
 
   const renderGroupItem = ({ item, index }: { item: Group; index: number }) => {
     const isLast = index === groups.length - 1;
     return (
-      <TouchableOpacity 
-        activeOpacity={0.75} 
-        onPress={() => router.push({ pathname: '/group-detail' as never, params: { groupId: item.group_id } } as never)}
+      <TouchableOpacity
+        activeOpacity={0.75}
+        onPress={() =>
+          router.push({ pathname: '/group-detail' as never, params: { groupId: item.group_id } } as never)
+        }
         style={[styles.listItem, !isLast && styles.listItemBorder]}
       >
         <View style={styles.groupInfo}>
-          <View style={styles.avatar}>
-            <Text style={styles.avatarText}>{item.name.charAt(0).toUpperCase()}</Text>
-          </View>
+          <Avatar
+            imageUrl={item.picture_url}
+            emoji={item.emoji}
+            name={item.name}
+            size={56}
+            backgroundColor="#EEF2FF"
+            textColor={Colors.primary}
+          />
           <View style={styles.textContainer}>
-            <Typography.Body style={styles.groupName}>{item.name}</Typography.Body>
+            <View style={styles.nameRow}>
+              <Typography.Body style={styles.groupName} numberOfLines={1}>
+                {item.name}
+              </Typography.Body>
+              {item.is_pinned && (
+                <View style={styles.pinBadge}>
+                  <Pin size={12} color={Colors.primary} fill={Colors.primary} />
+                </View>
+              )}
+            </View>
             <View style={styles.memberRow}>
               <Users size={14} color={Colors.textSecondary} />
               <Typography.Caption style={styles.memberCount}>
@@ -57,8 +103,28 @@ export default function GroupsScreen() {
             </View>
           </View>
         </View>
-        <View style={styles.balanceContainer}>
-          <Typography.Caption style={styles.balanceLabel}>Balanced</Typography.Caption>
+        <View style={styles.rowActions}>
+          <TouchableOpacity
+            hitSlop={10}
+            onPress={() => togglePin(item)}
+            disabled={pinningId === item.group_id}
+            style={styles.iconBtn}
+          >
+            {item.is_pinned ? (
+              <PinOff size={18} color={Colors.primary} />
+            ) : (
+              <Pin size={18} color={Colors.textSecondary} />
+            )}
+          </TouchableOpacity>
+          <TouchableOpacity
+            hitSlop={10}
+            onPress={() =>
+              router.push({ pathname: '/edit-group' as never, params: { groupId: item.group_id } } as never)
+            }
+            style={styles.iconBtn}
+          >
+            <Pencil size={18} color={Colors.textSecondary} />
+          </TouchableOpacity>
           <ChevronRight size={16} color={Colors.textSecondary} style={{ marginLeft: 4 }} />
         </View>
       </TouchableOpacity>
@@ -102,23 +168,23 @@ export default function GroupsScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.background },
-  header: { 
-    flexDirection: 'row', 
-    justifyContent: 'space-between', 
-    alignItems: 'center', 
-    paddingHorizontal: Spacing.lg, 
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: Spacing.lg,
     paddingTop: Spacing.xl,
     paddingBottom: Spacing.md,
-    backgroundColor: Colors.background
+    backgroundColor: Colors.background,
   },
   title: { fontSize: 32, fontWeight: '800', color: Colors.text },
-  createBtn: { 
-    backgroundColor: Colors.primary, 
+  createBtn: {
+    backgroundColor: Colors.primary,
     flexDirection: 'row',
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: BorderRadius.round,
-    justifyContent: 'center', 
+    justifyContent: 'center',
     alignItems: 'center',
   },
   createBtnText: { color: Colors.white, fontWeight: '700', fontSize: 14 },
@@ -133,25 +199,22 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: Colors.itemBorder,
   },
-  groupInfo: { flexDirection: 'row', alignItems: 'center', flex: 1 },
-  avatar: { 
-    width: 60, 
-    height: 60, 
-    borderRadius: 30, 
-    backgroundColor: '#EEF2FF', 
-    justifyContent: 'center', 
-    alignItems: 'center',
-    marginRight: Spacing.md,
-    borderWidth: 1,
-    borderColor: Colors.itemBorder
-  },
-  avatarText: { fontWeight: '800', fontSize: 22, color: Colors.primary },
+  groupInfo: { flexDirection: 'row', alignItems: 'center', flex: 1, gap: Spacing.md },
   textContainer: { flex: 1, gap: 2 },
-  groupName: { fontWeight: '800', fontSize: 18, color: Colors.text },
+  nameRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.xs },
+  groupName: { fontWeight: '800', fontSize: 17, color: Colors.text, maxWidth: 180 },
+  pinBadge: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    backgroundColor: `${Colors.primary}15`,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   memberRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   memberCount: { fontSize: 13, color: Colors.textSecondary },
-  balanceContainer: { flexDirection: 'row', alignItems: 'center' },
-  balanceLabel: { fontSize: 13, color: Colors.textSecondary, fontWeight: '600' },
+  rowActions: { flexDirection: 'row', alignItems: 'center', gap: Spacing.xs },
+  iconBtn: { padding: Spacing.xs },
 
   center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   emptyState: { padding: 60, alignItems: 'center', justifyContent: 'center' },

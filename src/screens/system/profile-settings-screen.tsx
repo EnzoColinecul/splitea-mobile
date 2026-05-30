@@ -1,12 +1,15 @@
 import { userApi } from '@/api/user';
+import { Avatar } from '@/components/common/avatar';
 import { BusyOverlay, Button, Input, Typography } from '@/components/common/shared';
 import { BorderRadius, Colors, Spacing } from '@/theme/theme';
 import { User } from '@/types';
 import { GlobalEvents } from '@/utils/events';
+import { extensionForMime, resolveImageMime, uploadImageToS3 } from '@/utils/upload';
+import * as ImagePicker from 'expo-image-picker';
 import { Stack, useRouter } from 'expo-router';
-import { ChevronLeft, ChevronRight, CreditCard, Globe } from 'lucide-react-native';
+import { Camera, ChevronLeft, ChevronRight, CreditCard, Globe } from 'lucide-react-native';
 import React, { useEffect, useState } from 'react';
-import { ActivityIndicator, Alert, DeviceEventEmitter, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Alert, DeviceEventEmitter, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function ProfileSettingsScreen() {
@@ -16,6 +19,7 @@ export default function ProfileSettingsScreen() {
   const [lastName, setLastName] = useState('');
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState(false);
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
 
   useEffect(() => {
     loadProfile();
@@ -45,6 +49,37 @@ export default function ProfileSettingsScreen() {
       Alert.alert('Error', 'Failed to load profile details.');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleChangePhoto = async () => {
+    const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (!perm.granted) {
+      Alert.alert('Permission needed', 'Please allow photo library access.');
+      return;
+    }
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ['images'],
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.85,
+    });
+    if (result.canceled || !result.assets[0]) return;
+
+    try {
+      setUploadingPhoto(true);
+      const asset = result.assets[0];
+      const mimeType = resolveImageMime(asset);
+      const filename = `avatar_${Date.now()}.${extensionForMime(mimeType)}`;
+      const presigned = await userApi.getUploadUrl(filename, mimeType);
+      await uploadImageToS3(asset.uri, presigned.upload_url, mimeType);
+      const updated = await userApi.updateProfile({ avatar_s3_key: presigned.object_key });
+      setUser(updated);
+    } catch (e) {
+      console.error('Photo upload failed', e);
+      Alert.alert('Upload Failed', 'Could not update your profile photo.');
+    } finally {
+      setUploadingPhoto(false);
     }
   };
 
@@ -90,6 +125,32 @@ export default function ProfileSettingsScreen() {
       </View>
 
       <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
+        <View style={styles.photoRow}>
+          <View>
+            <Avatar
+              imageUrl={user?.avatar_url}
+              name={user?.first_name || ''}
+              size={88}
+              backgroundColor={Colors.itemBorder}
+            />
+            {uploadingPhoto && (
+              <View style={styles.photoOverlay}>
+                <ActivityIndicator color={Colors.white} />
+              </View>
+            )}
+          </View>
+          <TouchableOpacity
+            style={styles.changePhotoBtn}
+            onPress={handleChangePhoto}
+            disabled={uploadingPhoto || updating}
+          >
+            <Camera size={16} color={Colors.primary} />
+            <Text style={styles.changePhotoText}>
+              {user?.avatar_url ? 'Change photo' : 'Upload photo'}
+            </Text>
+          </TouchableOpacity>
+        </View>
+
         <Typography.SectionHeader>PERSONAL INFORMATION</Typography.SectionHeader>
         <View style={styles.section}>
           <Input
@@ -250,5 +311,32 @@ const styles = StyleSheet.create({
   infoText: {
     textAlign: 'center',
     lineHeight: 20,
+  },
+  photoRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.lg,
+    marginBottom: Spacing.xl,
+  },
+  photoOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0,0,0,0.4)',
+    borderRadius: 44,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  changePhotoBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.xs,
+    paddingVertical: Spacing.sm,
+    paddingHorizontal: Spacing.md,
+    borderRadius: BorderRadius.round,
+    borderWidth: 1.5,
+    borderColor: Colors.primary,
+  },
+  changePhotoText: {
+    color: Colors.primary,
+    fontWeight: '700',
   },
 });

@@ -1,7 +1,10 @@
 import { friendsApi, groupsApi } from '@/api/social';
+import { Avatar } from '@/components/common/avatar';
 import { BusyOverlay, Button, Typography } from '@/components/common/shared';
+import { GroupPicturePicker, GroupPicturePickerValue } from '@/components/groups/group-picture-picker';
 import { Colors, Spacing } from '@/theme/theme';
 import { Friend } from '@/types';
+import { extensionForMime, resolveImageMime, uploadImageToS3 } from '@/utils/upload';
 import { Stack, useRouter } from 'expo-router';
 import { CheckCircle, ChevronLeft } from 'lucide-react-native';
 import React, { useEffect, useState } from 'react';
@@ -17,6 +20,7 @@ export default function CreateGroupScreen() {
   const [selectedFriendIds, setSelectedFriendIds] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState(false);
+  const [picture, setPicture] = useState<GroupPicturePickerValue>({});
   const isBusy = creating;
 
   useEffect(() => {
@@ -50,7 +54,34 @@ export default function CreateGroupScreen() {
 
     setCreating(true);
     try {
-      const group = await groupsApi.create({ name, description });
+      const hasPicture = !!picture.pictureLocalUri;
+      const group = await groupsApi.create({
+        name,
+        description,
+        emoji: hasPicture ? null : picture.emoji || null,
+      });
+
+      if (picture.pictureLocalUri) {
+        try {
+          const mimeType = resolveImageMime({
+            mimeType: picture.pictureMimeType,
+            uri: picture.pictureLocalUri,
+          });
+          const filename = `group_${Date.now()}.${extensionForMime(mimeType)}`;
+          const presigned = await groupsApi.getUploadUrl(group.group_id, filename, mimeType);
+          await uploadImageToS3(picture.pictureLocalUri, presigned.upload_url, mimeType);
+          await groupsApi.update(group.group_id, {
+            emoji: null,
+            picture_s3_key: presigned.object_key,
+          });
+        } catch (e) {
+          console.error('Failed to upload group picture', e);
+          Alert.alert(
+            'Picture not uploaded',
+            'Your group was created, but we could not upload the picture. You can try again from the group settings.',
+          );
+        }
+      }
 
       if (selectedFriendIds.length > 0) {
         await groupsApi.addFriends(group.group_id, selectedFriendIds);
@@ -81,6 +112,8 @@ export default function CreateGroupScreen() {
       <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled" scrollEnabled={!isBusy}>
         <View style={styles.section}>
           <Typography.Header style={styles.mainTitle}>Create Group</Typography.Header>
+
+          <GroupPicturePicker name={name || 'Group'} value={picture} onChange={setPicture} />
 
           <View style={styles.inputGroup}>
             <Text style={styles.label}>Group Name</Text>
@@ -125,8 +158,8 @@ export default function CreateGroupScreen() {
                   onPress={() => toggleFriend(friend.user_id)}
                   disabled={isBusy}
                 >
-                  <View style={styles.avatar}>
-                    <Text style={styles.avatarText}>{friend.first_name.charAt(0)}</Text>
+                  <View style={{ marginRight: Spacing.md }}>
+                    <Avatar imageUrl={friend.avatar_url} name={friend.first_name} size={44} />
                   </View>
                   <View style={{ flex: 1 }}>
                     <Text style={styles.friendName}>{friend.first_name} {friend.last_name}</Text>
@@ -190,16 +223,6 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.white
   },
   friendSelected: { borderColor: Colors.primary, backgroundColor: '#FFF9F4' },
-  avatar: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: '#F1F5F9',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: Spacing.md
-  },
-  avatarText: { fontWeight: '700', color: Colors.primary, fontSize: 18 },
   friendName: { fontWeight: '600', fontSize: 16, color: Colors.text },
   friendEmail: { fontSize: 13, color: Colors.textSecondary },
   emptyText: { color: Colors.textSecondary, fontStyle: 'italic', marginTop: 10 },

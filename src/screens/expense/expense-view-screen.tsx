@@ -6,7 +6,7 @@ import { Colors, Spacing } from '@/theme/theme';
 import { Expense, User } from '@/types';
 import { buildMemberLookup, formatCurrency, getDisplayName, getExpenseParticipantAmount } from '@/utils/expense-display';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
-import { ChevronLeft, Download, Expand, FileImage, Users, X } from 'lucide-react-native';
+import { ChevronLeft, Download, Expand, FileImage, Trash2, Users, X } from 'lucide-react-native';
 import React, { useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, Alert, Dimensions, Image, Linking, Modal, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -67,6 +67,7 @@ export default function ExpenseViewScreen() {
   const [receiptVisible, setReceiptVisible] = useState(false);
   const [receiptPresignedUrl, setReceiptPresignedUrl] = useState<string | null>(null);
   const [receiptLoading, setReceiptLoading] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -123,6 +124,36 @@ export default function ExpenseViewScreen() {
   const memberLookup = useMemo(() => buildMemberLookup(members, currentUser), [members, currentUser]);
   const paidByName = expense ? getDisplayName(expense.paid_by, memberLookup) : 'Member';
 
+  const handleDeleteExpense = () => {
+    if (!expense || deleting) return;
+    Alert.alert(
+      'Delete expense',
+      'This will be recorded in the group activity. Are you sure?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: async () => {
+            if (deleting) return;
+            setDeleting(true);
+            try {
+              await expensesApi.deleteExpense(expense.expense_id);
+              router.back();
+            } catch (error: any) {
+              const detail =
+                error?.response?.data?.detail ||
+                error?.message ||
+                'Could not delete this expense.';
+              Alert.alert('Error', detail);
+              setDeleting(false);
+            }
+          },
+        },
+      ]
+    );
+  };
+
   const handleOpenReceipt = async () => {
     if (!expense?.receipt_url) return;
     setReceiptVisible(true);
@@ -168,7 +199,21 @@ export default function ExpenseViewScreen() {
           <ChevronLeft size={28} color={Colors.text} />
         </TouchableOpacity>
         <Typography.SubHeader style={styles.headerTitle}>Expense Details</Typography.SubHeader>
-        <View style={styles.headerSpacer} />
+        {currentUser && expense && currentUser.user_id === expense.paid_by ? (
+          <TouchableOpacity
+            onPress={handleDeleteExpense}
+            style={styles.deleteBtn}
+            disabled={deleting}
+          >
+            {deleting ? (
+              <ActivityIndicator size="small" color={Colors.danger} />
+            ) : (
+              <Trash2 size={22} color={Colors.danger} />
+            )}
+          </TouchableOpacity>
+        ) : (
+          <View style={styles.headerSpacer} />
+        )}
       </View>
 
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
@@ -334,7 +379,7 @@ export default function ExpenseViewScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F8FAFC' },
+  container: { flex: 1, backgroundColor: Colors.background },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   header: {
     flexDirection: 'row',
@@ -346,6 +391,7 @@ const styles = StyleSheet.create({
   backBtn: { padding: Spacing.xs },
   headerTitle: { fontSize: 18, color: Colors.text, marginBottom: 0, fontWeight: '700' },
   headerSpacer: { width: 36 },
+  deleteBtn: { padding: Spacing.xs, width: 36, alignItems: 'center' },
   scroll: { padding: Spacing.lg, paddingBottom: 40, gap: Spacing.lg },
   
   receiptWrapper: {

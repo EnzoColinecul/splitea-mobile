@@ -41,3 +41,10 @@ yarn-error.*
 /android
 
 .vscode
+
+#temporary files
+tmp/
+tmp/*
+
+#playwright
+.playwright-mcp
