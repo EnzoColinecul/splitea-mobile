@@ -1,5 +1,6 @@
 import { userApi } from "@/api/user";
 import { authEvents } from "@/utils/auth-events";
+import { registerPushToken, unregisterPushToken } from "@/utils/push-notifications";
 import { useRouter, useSegments } from "expo-router";
 import * as SecureStore from "expo-secure-store";
 import React, { createContext, useContext, useEffect, useState } from "react";
@@ -84,6 +85,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         try {
           await userApi.getProfile();
           setToken(storedToken);
+          if (Platform.OS !== 'web') {
+            registerPushToken();
+          }
         } catch (error: any) {
           if (error.response?.status === 401) {
             console.warn("Token invalid, clearing storage");
@@ -108,9 +112,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const signIn = async (newToken: string) => {
     await writeToken(newToken);
     setToken(newToken);
+    if (Platform.OS !== 'web') {
+      registerPushToken();
+    }
   };
 
   const signOut = async () => {
+    if (Platform.OS !== 'web') {
+      await unregisterPushToken();
+    }
     await clearToken();
     setToken(null);
   };

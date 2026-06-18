@@ -27,7 +27,10 @@ apiClient.interceptors.request.use(async (config) => {
   try {
     let token: string | null = null;
     if (Platform.OS === "web") {
-      if (typeof window !== "undefined" && typeof window.localStorage !== "undefined") {
+      if (
+        typeof window !== "undefined" &&
+        typeof window.localStorage !== "undefined"
+      ) {
         token = window.localStorage.getItem("userToken");
       }
     } else {

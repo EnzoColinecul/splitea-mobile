@@ -77,6 +77,7 @@ export interface ActivityItem {
   group_name?: string | null;
   your_share: number;
   currency: string;
+  payment_method?: 'manual' | 'stripe' | null;
 }
 
 export interface UserActivityResponse {
@@ -135,6 +136,7 @@ export interface Expense {
   paid_by: string;
   description?: string;
   expense_type: string;
+  payment_method?: 'manual' | 'stripe' | null;
   split_type: string;
   currency: string;
   receipt_url?: string;
@@ -168,4 +170,45 @@ export interface GroupBalance {
   other_user_id: string;
   balance: number;
   last_updated: string;
+}
+
+// Payment types
+export interface StripeConnectResponse {
+  url: string;
+  stripe_account_id: string;
+}
+
+export interface StripeAccountStatus {
+  connected: boolean;
+  stripe_account_id?: string;
+  charges_enabled?: boolean;
+  payouts_enabled?: boolean;
+  details_submitted?: boolean;
+  payable: boolean;
+}
+
+export interface EligibilityProvider {
+  provider: string;
+  enabled: boolean;
+  reason?: string;
+  message?: string;
+}
+
+export interface PaymentEligibility {
+  expense_split_id: string;
+  providers: EligibilityProvider[];
+}
+
+export interface SettlementResponse {
+  settlement_id: string;
+  checkout_url: string;
+  status: string;
+}
+
+export interface PaymentSettlement {
+  settlement_id: string;
+  expense_split_id: string;
+  status: 'pending' | 'succeeded' | 'failed' | 'canceled';
+  amount: number;
+  currency: string;
 }
