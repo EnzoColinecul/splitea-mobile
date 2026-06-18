@@ -11,6 +11,7 @@ export default function RootLayout() {
         <Stack.Screen name="(auth)" />
         <Stack.Screen name="expense" />
         <Stack.Screen name="modal" options={{ presentation: 'modal' }} />
+        <Stack.Screen name="stripe-connect" />
         <Stack.Screen name="+not-found" />
       </Stack>
     </AuthProvider>

@@ -40,10 +40,11 @@ const SETTINGS_ITEMS: SettingsItem[] = [
   {
     key: 'payments',
     title: 'Payment methods',
-    subtitle: 'Coming soon for settle up flows',
+    subtitle: 'Connect Stripe to receive card payments',
     icon: CreditCard,
     tint: '#F3F4F6',
     iconColor: Colors.text,
+    route: '/stripe-connect',
   },
   {
     key: 'privacy',

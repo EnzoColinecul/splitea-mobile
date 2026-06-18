@@ -1,14 +1,18 @@
 import apiClient from '@/api/api-client';
 import { expensesApi } from '@/api/expenses';
+import { paymentsApi } from '@/api/payments';
 import { groupsApi } from '@/api/social';
-import { Card, Typography } from '@/components/common/shared';
-import { Colors, Spacing } from '@/theme/theme';
-import { Expense, User } from '@/types';
+import { Button, Card, Typography } from '@/components/common/shared';
+import { BorderRadius, Colors, Spacing } from '@/theme/theme';
+import { EligibilityProvider, Expense, ExpenseSplit, PaymentSettlement, User } from '@/types';
 import { buildMemberLookup, formatCurrency, getDisplayName, getExpenseParticipantAmount } from '@/utils/expense-display';
+import { GlobalEvents, PaymentReceivedPayload } from '@/utils/events';
+import { useFocusEffect } from '@react-navigation/native';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
-import { ChevronLeft, Download, Expand, FileImage, Trash2, Users, X } from 'lucide-react-native';
-import React, { useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Alert, Dimensions, Image, Linking, Modal, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { openAuthUrl } from '@/utils/open-auth-url';
+import { CheckCircle2, ChevronLeft, CreditCard, Download, Expand, FileImage, Info, Trash2, Users, X, XCircle } from 'lucide-react-native';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { ActivityIndicator, Alert, DeviceEventEmitter, Dimensions, Image, Linking, Modal, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -69,60 +73,197 @@ export default function ExpenseViewScreen() {
   const [receiptLoading, setReceiptLoading] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
-  useEffect(() => {
-    let cancelled = false;
+  // Payment state
+  const [myDebtorSplit, setMyDebtorSplit] = useState<ExpenseSplit | null>(null);
+  const [stripeEligibility, setStripeEligibility] = useState<EligibilityProvider | null>(null);
+  const [eligibilityLoading, setEligibilityLoading] = useState(false);
+  const [startingPayment, setStartingPayment] = useState(false);
+  const [reasonVisible, setReasonVisible] = useState(false);
+  const reasonTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [paymentModalVisible, setPaymentModalVisible] = useState(false);
+  const [paymentPhase, setPaymentPhase] = useState<'confirming' | 'done'>('confirming');
+  const [settlementStatus, setSettlementStatus] = useState<PaymentSettlement['status'] | 'timeout' | null>(null);
 
-    const loadExpense = async () => {
-      try {
-        const profilePromise = apiClient.get<User>('/user/profile');
-        const expensePromise = initialExpense
-          ? Promise.resolve(initialExpense)
-          : expensesApi.listUserExpenses().then((response) =>
-              (response.expenses || []).find((item) => item.expense_id === params.expenseId) || null
-            );
+  const showReason = () => {
+    if (reasonTimer.current) clearTimeout(reasonTimer.current);
+    setReasonVisible(true);
+    reasonTimer.current = setTimeout(() => setReasonVisible(false), 3000);
+  };
 
-        const [profileRes, resolvedExpense] = await Promise.all([profilePromise, expensePromise]);
+  useFocusEffect(
+    useCallback(() => {
+      let cancelled = false;
 
-        if (cancelled) return;
+      const loadExpense = async () => {
+        const expenseId = initialExpense?.expense_id || params.expenseId;
 
-        setCurrentUser(profileRes.data);
+        try {
+          const [profileRes, listRes] = await Promise.all([
+            apiClient.get<User>('/user/profile'),
+            expensesApi.listUserExpenses(),
+          ]);
 
-        if (!resolvedExpense) {
-          Alert.alert('Expense not found', 'We could not load this expense.');
-          router.back();
-          return;
-        }
+          if (cancelled) return;
 
-        setExpense(resolvedExpense);
+          setCurrentUser(profileRes.data);
 
-        if (resolvedExpense.group_id) {
-          const groupUsersRes = await groupsApi.getUsers(resolvedExpense.group_id);
+          const resolvedExpense =
+            (listRes.expenses || []).find((item) => item.expense_id === expenseId) || null;
+
+          if (!resolvedExpense) {
+            if (!initialExpense) {
+              Alert.alert('Expense not found', 'We could not load this expense.');
+              router.back();
+              return;
+            }
+            // Keep optimistic copy from params if server hasn't caught up yet
+            return;
+          }
+
+          setExpense(resolvedExpense);
+
+          if (resolvedExpense.group_id) {
+            const groupUsersRes = await groupsApi.getUsers(resolvedExpense.group_id);
+            if (!cancelled) {
+              setMembers(groupUsersRes.users || []);
+            }
+          }
+        } catch (error) {
+          console.error(error);
+          if (!cancelled && !initialExpense) {
+            Alert.alert('Error', 'Could not load expense details.');
+            router.back();
+          }
+        } finally {
           if (!cancelled) {
-            setMembers(groupUsersRes.users || []);
+            setLoading(false);
           }
         }
-      } catch (error) {
-        console.error(error);
-        if (!cancelled) {
-          Alert.alert('Error', 'Could not load expense details.');
-          router.back();
-        }
-      } finally {
-        if (!cancelled) {
-          setLoading(false);
-        }
-      }
-    };
+      };
 
-    loadExpense();
+      loadExpense();
 
-    return () => {
-      cancelled = true;
-    };
-  }, [initialExpense, params.expenseId, router]);
+      return () => {
+        cancelled = true;
+      };
+    }, [initialExpense, params.expenseId, router])
+  );
 
   const memberLookup = useMemo(() => buildMemberLookup(members, currentUser), [members, currentUser]);
   const paidByName = expense ? getDisplayName(expense.paid_by, memberLookup) : 'Member';
+
+  // Refresh expense when a push reports a payment landed on it
+  useEffect(() => {
+    const sub = DeviceEventEmitter.addListener(
+      GlobalEvents.PAYMENT_RECEIVED,
+      (payload: PaymentReceivedPayload) => {
+        if (!expense || payload?.expense_id !== expense.expense_id) return;
+        expensesApi.listUserExpenses()
+          .then((res) => {
+            const updated = (res.expenses || []).find((e) => e.expense_id === expense.expense_id);
+            if (updated) setExpense(updated);
+          })
+          .catch(() => {});
+      }
+    );
+    return () => sub.remove();
+  }, [expense]);
+
+  // Derive the current user's debtor split and check payment eligibility
+  useEffect(() => {
+    if (!expense || !currentUser) return;
+
+    // User is a debtor if someone else paid and they have an unpaid split
+    if (expense.paid_by === currentUser.user_id) return;
+
+    const split = expense.splits?.find(
+      (s) => s.user_id === currentUser.user_id && s.is_paid !== 'true'
+    ) ?? null;
+
+    setMyDebtorSplit(split);
+
+    if (!split) return;
+
+    let cancelled = false;
+    setEligibilityLoading(true);
+
+    paymentsApi.getEligibility(split.expense_split_id)
+      .then((data) => {
+        if (cancelled) return;
+        const provider = data.providers.find((p) => p.provider === 'stripe') ?? null;
+        setStripeEligibility(provider);
+      })
+      .catch(() => {
+        // Silently fail — payment section simply won't render
+      })
+      .finally(() => {
+        if (!cancelled) setEligibilityLoading(false);
+      });
+
+    return () => { cancelled = true; };
+  }, [expense, currentUser]);
+
+  const pollSettlement = async (expenseSplitId: string): Promise<PaymentSettlement['status'] | 'timeout'> => {
+    const MAX_ATTEMPTS = 15;
+    for (let i = 0; i < MAX_ATTEMPTS; i++) {
+      await new Promise<void>((resolve) => setTimeout(resolve, 2000));
+      try {
+        const data = await paymentsApi.getSettlement(expenseSplitId);
+        if (data.status !== 'pending') return data.status;
+      } catch {
+        // Continue polling on transient errors
+      }
+    }
+    return 'timeout';
+  };
+
+  const handlePayWithCard = async () => {
+    if (!myDebtorSplit || startingPayment) return;
+
+    try {
+      setStartingPayment(true);
+      const { checkout_url } = await paymentsApi.settle(myDebtorSplit.expense_split_id);
+      setStartingPayment(false);
+
+      await openAuthUrl(checkout_url);
+
+      // Browser closed — show modal and poll to determine actual outcome
+      setSettlementStatus(null);
+      setPaymentPhase('confirming');
+      setPaymentModalVisible(true);
+
+      const finalStatus = await pollSettlement(myDebtorSplit.expense_split_id);
+
+      // User cancelled in Stripe Checkout → dismiss modal silently
+      if (finalStatus === 'canceled') {
+        setPaymentModalVisible(false);
+        setPaymentPhase('confirming');
+        return;
+      }
+
+      setSettlementStatus(finalStatus);
+      setPaymentPhase('done');
+
+      // Reload expense so split.is_paid reflects new state
+      if (finalStatus === 'succeeded') {
+        try {
+          const refreshed = await expensesApi.listUserExpenses();
+          const updated = (refreshed.expenses || []).find((e) => e.expense_id === expense?.expense_id);
+          if (updated) setExpense(updated);
+        } catch { /* best-effort */ }
+      }
+    } catch (error: any) {
+      setStartingPayment(false);
+      const msg = error?.response?.data?.detail?.message ?? 'Could not start payment. Please try again.';
+      Alert.alert('Payment error', msg);
+    }
+  };
+
+  const handleClosePaymentModal = () => {
+    setPaymentModalVisible(false);
+    setSettlementStatus(null);
+    setPaymentPhase('confirming');
+  };
 
   const handleDeleteExpense = () => {
     if (!expense || deleting) return;
@@ -315,6 +456,50 @@ export default function ExpenseViewScreen() {
           </View>
         </Card>
 
+        {/* Pay with Card — only shown when user is a debtor with an eligible split */}
+        {myDebtorSplit && (
+          <Card style={styles.sectionCardPremium}>
+            <View style={styles.sectionHeaderRow}>
+              <Typography.SectionHeader style={styles.premiumSectionHeader}>Pay with Card</Typography.SectionHeader>
+              <CreditCard size={18} color={Colors.primary} />
+            </View>
+
+            {eligibilityLoading ? (
+              <View style={styles.paymentLoadingRow}>
+                <ActivityIndicator size="small" color={Colors.primary} />
+                <Typography.Caption>Checking payment options…</Typography.Caption>
+              </View>
+            ) : stripeEligibility?.enabled ? (
+              <View style={styles.paymentReadyRow}>
+                <Typography.Caption style={{ color: Colors.textSecondary, flex: 1 }}>
+                  Pay your share of {formatCurrency(Number(myDebtorSplit.amount_owed))} securely via Stripe.
+                </Typography.Caption>
+                <Button
+                  title={startingPayment ? 'Opening…' : 'Pay now'}
+                  variant="primary"
+                  onPress={handlePayWithCard}
+                  disabled={startingPayment}
+                  style={styles.payNowButton}
+                />
+              </View>
+            ) : stripeEligibility && !stripeEligibility.enabled ? (
+              <View style={styles.payNowDisabledRow}>
+                <View style={[styles.payNowDisabledContent, styles.payNowDisabledOpacity]}>
+                  <CreditCard size={16} color={Colors.primary} strokeWidth={2} />
+                  <Typography.Body style={styles.payNowDisabledText}>Pay now</Typography.Body>
+                </View>
+                <TouchableOpacity
+                  style={styles.infoBtn}
+                  onPress={showReason}
+                  hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                >
+                  <Info size={18} color={Colors.primary} />
+                </TouchableOpacity>
+              </View>
+            ) : null}
+          </Card>
+        )}
+
         {expense.receipt_url ? (
           <TouchableOpacity activeOpacity={0.75} onPress={handleOpenReceipt}>
             <Card style={styles.sectionCardPremium}>
@@ -340,6 +525,59 @@ export default function ExpenseViewScreen() {
           </Card>
         )}
       </ScrollView>
+
+      {/* Payment Confirmation Modal */}
+      <Modal
+        visible={paymentModalVisible}
+        animationType="slide"
+        transparent
+        statusBarTranslucent
+        onRequestClose={paymentPhase === 'done' ? handleClosePaymentModal : undefined}
+      >
+        <View style={styles.paymentModalBackdrop}>
+          <View style={styles.paymentModalSheet}>
+            {paymentPhase === 'confirming' ? (
+              <>
+                <ActivityIndicator size="large" color={Colors.primary} />
+                <Typography.SubHeader style={styles.paymentModalTitle}>Confirming payment…</Typography.SubHeader>
+                <Typography.Caption style={styles.paymentModalCaption}>
+                  This usually takes just a few seconds.
+                </Typography.Caption>
+              </>
+            ) : settlementStatus === 'succeeded' ? (
+              <>
+                <View style={[styles.paymentStatusIcon, { backgroundColor: Colors.successSoft }]}>
+                  <CheckCircle2 size={40} color={Colors.success} />
+                </View>
+                <Typography.SubHeader style={styles.paymentModalTitle}>Payment confirmed</Typography.SubHeader>
+                <Typography.Caption style={styles.paymentModalCaption}>
+                  Your share has been marked as paid.
+                </Typography.Caption>
+                <Button title="Done" variant="primary" onPress={handleClosePaymentModal} style={styles.paymentModalBtn} />
+              </>
+            ) : settlementStatus === 'failed' ? (
+              <>
+                <View style={[styles.paymentStatusIcon, { backgroundColor: Colors.dangerSoft }]}>
+                  <XCircle size={40} color={Colors.danger} />
+                </View>
+                <Typography.SubHeader style={styles.paymentModalTitle}>Payment failed</Typography.SubHeader>
+                <Typography.Caption style={styles.paymentModalCaption}>
+                  The card was declined. You can try again with a different card.
+                </Typography.Caption>
+                <Button title="Close" variant="outline" onPress={handleClosePaymentModal} style={styles.paymentModalBtn} />
+              </>
+            ) : (
+              <>
+                <Typography.SubHeader style={styles.paymentModalTitle}>Payment processing</Typography.SubHeader>
+                <Typography.Caption style={styles.paymentModalCaption}>
+                  We'll update your balance once the payment is confirmed. You can close this screen.
+                </Typography.Caption>
+                <Button title="Close" variant="outline" onPress={handleClosePaymentModal} style={styles.paymentModalBtn} />
+              </>
+            )}
+          </View>
+        </View>
+      </Modal>
 
       {/* Fullscreen Receipt Modal */}
       <Modal
@@ -374,6 +612,21 @@ export default function ExpenseViewScreen() {
           )}
         </View>
       </Modal>
+
+      {reasonVisible && (
+        <TouchableOpacity
+          style={styles.popoverBackdrop}
+          activeOpacity={1}
+          onPress={() => setReasonVisible(false)}
+        >
+          <View style={styles.popover}>
+            <Info size={16} color={Colors.primary} strokeWidth={2} />
+            <Typography.Caption style={styles.popoverText}>
+              {stripeEligibility?.message ?? "This person hasn't connected Stripe yet, so card payments aren't available."}
+            </Typography.Caption>
+          </View>
+        </TouchableOpacity>
+      )}
     </SafeAreaView>
   );
 }
@@ -500,4 +753,78 @@ const styles = StyleSheet.create({
     borderRadius: 32,
   },
   receiptDownloadText: { color: Colors.white, fontWeight: '700', fontSize: 16 },
+
+  // Payment section styles
+  paymentLoadingRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm, marginTop: Spacing.xs },
+  paymentReadyRow: { gap: Spacing.md, marginTop: Spacing.xs },
+  payNowButton: { width: '100%' },
+  payNowDisabledRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 1.5,
+    borderColor: Colors.primary,
+    borderRadius: BorderRadius.round,
+    paddingVertical: Spacing.md,
+    paddingHorizontal: Spacing.lg,
+    marginTop: Spacing.xs,
+  },
+  payNowDisabledContent: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm, flex: 1, justifyContent: 'center' },
+  payNowDisabledOpacity: { opacity: 0.45 },
+  payNowDisabledText: { color: Colors.primary, fontWeight: '700', fontSize: 16 },
+  infoBtn: { padding: Spacing.xs },
+  popoverBackdrop: { position: 'absolute', top: 0, bottom: 0, left: 0, right: 0 },
+  popover: {
+    position: 'absolute',
+    bottom: Spacing.xl,
+    left: Spacing.lg,
+    right: Spacing.lg,
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: Spacing.sm,
+    backgroundColor: Colors.text,
+    borderRadius: BorderRadius.md,
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.md,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 8,
+  },
+  popoverText: { color: Colors.white, lineHeight: 18, flex: 1 },
+
+  // Payment modal styles
+  paymentModalBackdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.45)',
+    justifyContent: 'flex-end',
+  },
+  paymentModalSheet: {
+    backgroundColor: Colors.white,
+    borderTopLeftRadius: BorderRadius.xl,
+    borderTopRightRadius: BorderRadius.xl,
+    padding: Spacing.xl,
+    paddingBottom: 48,
+    alignItems: 'center',
+    gap: Spacing.lg,
+  },
+  paymentStatusIcon: {
+    width: 72,
+    height: 72,
+    borderRadius: 36,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  paymentModalTitle: {
+    textAlign: 'center',
+    color: Colors.text,
+    marginBottom: 0,
+    fontSize: 20,
+  },
+  paymentModalCaption: {
+    textAlign: 'center',
+    color: Colors.textSecondary,
+    lineHeight: 20,
+  },
+  paymentModalBtn: { width: '100%', marginTop: Spacing.sm },
 });

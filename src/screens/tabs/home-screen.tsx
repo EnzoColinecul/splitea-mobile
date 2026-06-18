@@ -5,11 +5,13 @@ import { Card, Typography } from '@/components/common/shared';
 import { Colors, Spacing } from '@/theme/theme';
 import { DashboardSummary, User } from '@/types';
 import { formatCurrency } from '@/utils/expense-display';
+import { GlobalEvents } from '@/utils/events';
+import { useFocusEffect } from '@react-navigation/native';
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import { ArrowDownLeft, ArrowUpRight, Bell, Wallet } from 'lucide-react-native';
 import React, { useCallback, useEffect, useState } from 'react';
-import { ActivityIndicator, NativeScrollEvent, NativeSyntheticEvent, Platform, RefreshControl, ScrollView, StyleSheet, Text, TouchableOpacity, useWindowDimensions, View } from 'react-native';
+import { ActivityIndicator, DeviceEventEmitter, NativeScrollEvent, NativeSyntheticEvent, Platform, RefreshControl, ScrollView, StyleSheet, Text, TouchableOpacity, useWindowDimensions, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function DashboardScreen() {
@@ -24,11 +26,7 @@ export default function DashboardScreen() {
   const { width: windowWidth } = useWindowDimensions();
   const cardWidth = windowWidth - (Spacing.xl * 2);
 
-  useEffect(() => {
-    fetchData();
-  }, []);
-
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     try {
       const [uRes, sRes, eRes, nRes] = await Promise.all([
         apiClient.get('/user/profile'),
@@ -46,12 +44,26 @@ export default function DashboardScreen() {
       setLoading(false);
       setRefreshing(false);
     }
-  };
+  }, []);
+
+  useFocusEffect(
+    useCallback(() => {
+      fetchData();
+    }, [fetchData])
+  );
+
+  // Refresh dashboard when a Stripe payment lands while the user is on Home.
+  useEffect(() => {
+    const sub = DeviceEventEmitter.addListener(GlobalEvents.PAYMENT_RECEIVED, () => {
+      fetchData();
+    });
+    return () => sub.remove();
+  }, [fetchData]);
 
   const onRefresh = useCallback(() => {
     setRefreshing(true);
     fetchData();
-  }, []);
+  }, [fetchData]);
 
   const getTimeAgo = (dateStr: string) => {
     const date = new Date(dateStr);
@@ -73,7 +85,6 @@ export default function DashboardScreen() {
   }
 
   const netBalance = summary?.net_balance || 0;
-  const mainBalance = Math.abs(netBalance);
   const balanceLabel = netBalance >= 0 ? 'You are owed' : 'You owe';
   const balanceColor = netBalance >= 0 ? Colors.secondary : Colors.danger;
   const totalPaid = summary?.total_paid || 0;
@@ -82,7 +93,7 @@ export default function DashboardScreen() {
     {
       key: 'net',
       label: 'Net Balance',
-      amount: mainBalance,
+      amount: netBalance,
       color: '#FF7A00', // Primary Orange
       caption: balanceLabel,
       icon: Wallet,
@@ -222,7 +233,10 @@ export default function DashboardScreen() {
               const amountOwed = activity.splits?.find((s: any) => s.user_id === user?.user_id)?.amount_owed || 0;
               const isPayer = activity.paid_by === user?.user_id;
               const isSettleUp = activity.expense_type === 'settle-up';
+              const isStripe = isSettleUp && activity.payment_method === 'stripe';
               const settleAmount = Number(activity.total_amount || 0);
+
+              const settleVerb = isStripe ? 'paid with card' : 'settled up';
 
               return (
                 <View key={activity.expense_id || idx}>
@@ -232,8 +246,8 @@ export default function DashboardScreen() {
                       <Typography.Caption style={styles.activityDesc}>
                         {isSettleUp
                           ? isPayer
-                            ? 'You settled up'
-                            : `${activity.payer_name || 'They'} settled up`
+                            ? `You ${settleVerb}`
+                            : `${activity.payer_name || 'They'} ${settleVerb}`
                           : isPayer
                             ? 'You paid'
                             : `${activity.payer_name || 'Someone'} paid`}

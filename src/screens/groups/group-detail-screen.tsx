@@ -14,7 +14,7 @@ import {
 } from '@/utils/expense-display';
 import { useFocusEffect } from '@react-navigation/native';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
-import { ArrowDownCircle, ArrowUpCircle, CheckCircle, ChevronLeft, Plus, Receipt, Trash2, UserPlus } from 'lucide-react-native';
+import { ArrowDownCircle, ArrowUpCircle, CheckCircle, ChevronLeft, CreditCard, Plus, Receipt, Trash2, UserPlus } from 'lucide-react-native';
 import React, { useCallback, useMemo, useState } from 'react';
 import { ActivityIndicator, Alert, NativeScrollEvent, NativeSyntheticEvent, ScrollView, StyleSheet, Text, TouchableOpacity, useWindowDimensions, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -265,6 +265,7 @@ export default function GroupDetailScreen() {
         ) : (
           expenses.slice(0, 10).map(exp => {
             const isSettleUp  = exp.expense_type === 'settle-up';
+            const isStripe    = isSettleUp && exp.payment_method === 'stripe';
             const isDeleted   = exp.is_deleted === true;
             const payerName   = getDisplayName(exp.paid_by, memberLookup);
             const deleterName = exp.deleted_by ? getDisplayName(exp.deleted_by, memberLookup) : 'Someone';
@@ -280,13 +281,16 @@ export default function GroupDetailScreen() {
                                styles.receiptIcon
                 }>
                   {isDeleted  && <Trash2      size={20} color={Colors.textSecondary} />}
-                  {isSettleUp && <CheckCircle size={20} color={Colors.success} />}
+                  {isSettleUp && (isStripe
+                    ? <CreditCard size={20} color={Colors.primary} />
+                    : <CheckCircle size={20} color={Colors.success} />
+                  )}
                   {!isDeleted && !isSettleUp && <Receipt size={20} color={Colors.primary} />}
                 </View>
                 <View style={styles.expenseInfo}>
                   <Typography.Body style={[styles.expenseDesc, isDeleted && { color: Colors.textSecondary }]}>
                     {isDeleted  ? `${deleterName} deleted an expense` :
-                     isSettleUp ? `${payerName} settled up`           :
+                     isSettleUp ? `${payerName} ${isStripe ? 'paid with card' : 'settled up'}` :
                                    exp.title}
                   </Typography.Body>
                   <Typography.Caption style={styles.activityMeta}>
