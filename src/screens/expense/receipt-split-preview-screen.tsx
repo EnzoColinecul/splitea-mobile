@@ -166,18 +166,18 @@ const styles = StyleSheet.create({
   scroll: { padding: Spacing.xl },
   mainTitle: { fontSize: 24, fontWeight: '800', marginBottom: Spacing.lg, color: Colors.text },
 
-  receiptSummary: { backgroundColor: '#F8FAFC', borderRadius: BorderRadius.card, padding: Spacing.xl, alignItems: 'center', marginBottom: Spacing.xl, borderWidth: 1.5, borderColor: Colors.itemBorder },
+  receiptSummary: { backgroundColor: Colors.white, borderRadius: BorderRadius.card, padding: Spacing.xl, alignItems: 'center', marginBottom: Spacing.xl, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.06, shadowRadius: 6, elevation: 2 },
   receiptLabel: { fontSize: 13, color: Colors.textSecondary, fontWeight: '700', letterSpacing: 1 },
   receiptValue: { fontSize: 36, color: Colors.primary, fontWeight: '900', marginBottom: 0 },
 
-  expenseCard: { marginBottom: Spacing.lg, borderRadius: BorderRadius.card, padding: Spacing.lg, borderWidth: 1.5, borderColor: Colors.itemBorder },
+  expenseCard: { marginBottom: Spacing.lg, borderRadius: BorderRadius.card, padding: Spacing.lg, backgroundColor: Colors.white, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.06, shadowRadius: 6, elevation: 2 },
   cardHeader: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: Spacing.md },
   cardTitle: { marginBottom: 0, fontSize: 16, color: Colors.text },
 
   splitsList: { gap: Spacing.md },
   splitRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   splitLeft: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm },
-  avatar: { width: 32, height: 32, borderRadius: 16, backgroundColor: '#F3F4F6', justifyContent: 'center', alignItems: 'center', borderWidth: 1, borderColor: Colors.itemBorder },
+  avatar: { width: 32, height: 32, borderRadius: 16, backgroundColor: Colors.surfaceMuted, justifyContent: 'center', alignItems: 'center' },
   avatarText: { color: Colors.primary, fontWeight: 'bold', fontSize: 14 },
   name: { fontWeight: '600', color: Colors.text },
 

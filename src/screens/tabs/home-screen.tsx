@@ -1,18 +1,31 @@
-import apiClient from '@/api/api-client';
-import { expensesApi } from '@/api/expenses';
-import { notificationApi } from '@/api/notifications';
-import { Card, Typography } from '@/components/common/shared';
-import { Colors, Spacing } from '@/theme/theme';
-import { DashboardSummary, User } from '@/types';
-import { formatCurrency } from '@/utils/expense-display';
-import { GlobalEvents } from '@/utils/events';
-import { useFocusEffect } from '@react-navigation/native';
-import { Image } from 'expo-image';
-import { useRouter } from 'expo-router';
-import { ArrowDownLeft, ArrowUpRight, Bell, Wallet } from 'lucide-react-native';
-import React, { useCallback, useEffect, useState } from 'react';
-import { ActivityIndicator, DeviceEventEmitter, NativeScrollEvent, NativeSyntheticEvent, Platform, RefreshControl, ScrollView, StyleSheet, Text, TouchableOpacity, useWindowDimensions, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import apiClient from "@/api/api-client";
+import { expensesApi } from "@/api/expenses";
+import { notificationApi } from "@/api/notifications";
+import { Card, Typography } from "@/components/common/shared";
+import { Colors, Spacing } from "@/theme/theme";
+import { DashboardSummary, User } from "@/types";
+import { GlobalEvents } from "@/utils/events";
+import { formatCurrency } from "@/utils/expense-display";
+import { useFocusEffect } from "@react-navigation/native";
+import { Image } from "expo-image";
+import { useRouter } from "expo-router";
+import { ArrowDownLeft, ArrowUpRight, Bell, Wallet } from "lucide-react-native";
+import React, { useCallback, useEffect, useState } from "react";
+import {
+  ActivityIndicator,
+  DeviceEventEmitter,
+  NativeScrollEvent,
+  NativeSyntheticEvent,
+  Platform,
+  RefreshControl,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  useWindowDimensions,
+  View,
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function DashboardScreen() {
   const router = useRouter();
@@ -24,22 +37,22 @@ export default function DashboardScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [activeBalanceCard, setActiveBalanceCard] = useState(0);
   const { width: windowWidth } = useWindowDimensions();
-  const cardWidth = windowWidth - (Spacing.xl * 2);
+  const cardWidth = windowWidth - Spacing.xl * 2;
 
   const fetchData = useCallback(async () => {
     try {
       const [uRes, sRes, eRes, nRes] = await Promise.all([
-        apiClient.get('/user/profile'),
+        apiClient.get("/user/profile"),
         expensesApi.getSummary(),
         expensesApi.listUserExpenses({ limit: 5 }),
-        notificationApi.list({ is_read: false, limit: 1 })
+        notificationApi.list({ is_read: false, limit: 1 }),
       ]);
       setUser(uRes.data);
       setSummary(sRes);
       setExpenses(eRes.expenses || []);
       setNotifCount(nRes.total);
     } catch (err) {
-      console.error('Failed to fetch dashboard data', err);
+      console.error("Failed to fetch dashboard data", err);
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -49,14 +62,17 @@ export default function DashboardScreen() {
   useFocusEffect(
     useCallback(() => {
       fetchData();
-    }, [fetchData])
+    }, [fetchData]),
   );
 
   // Refresh dashboard when a Stripe payment lands while the user is on Home.
   useEffect(() => {
-    const sub = DeviceEventEmitter.addListener(GlobalEvents.PAYMENT_RECEIVED, () => {
-      fetchData();
-    });
+    const sub = DeviceEventEmitter.addListener(
+      GlobalEvents.PAYMENT_RECEIVED,
+      () => {
+        fetchData();
+      },
+    );
     return () => sub.remove();
   }, [fetchData]);
 
@@ -70,7 +86,7 @@ export default function DashboardScreen() {
     const now = new Date();
     const diffMs = now.getTime() - date.getTime();
     const diffHrs = Math.floor(diffMs / (1000 * 60 * 60));
-    if (diffHrs < 1) return 'Just now';
+    if (diffHrs < 1) return "Just now";
     if (diffHrs < 24) return `${diffHrs}h ago`;
     const diffDays = Math.floor(diffHrs / 24);
     return `${diffDays}d ago`;
@@ -78,50 +94,58 @@ export default function DashboardScreen() {
 
   if (loading && !refreshing) {
     return (
-      <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
+      <View
+        style={[
+          styles.container,
+          { justifyContent: "center", alignItems: "center" },
+        ]}
+      >
         <ActivityIndicator size="large" color={Colors.primary} />
       </View>
     );
   }
 
   const netBalance = summary?.net_balance || 0;
-  const balanceLabel = netBalance >= 0 ? 'You are owed' : 'You owe';
+  const balanceLabel = netBalance >= 0 ? "You are owed" : "You owe";
   const balanceColor = netBalance >= 0 ? Colors.secondary : Colors.danger;
   const totalPaid = summary?.total_paid || 0;
   const totalOwed = summary?.total_owed || 0;
   const balanceCards = [
     {
-      key: 'net',
-      label: 'Net Balance',
+      key: "net",
+      label: "Net Balance",
       amount: netBalance,
-      color: '#FF7A00', // Primary Orange
+      color: "#FF7A00", // Primary Orange
       caption: balanceLabel,
       icon: Wallet,
-      filter: 'net' as const,
+      filter: "net" as const,
     },
     {
-      key: 'owed',
-      label: 'You are Owed',
+      key: "owed",
+      label: "You are Owed",
       amount: totalPaid,
-      color: '#4CAF50', // Success Green
-      caption: 'Collect from friends',
+      color: "#4CAF50", // Success Green
+      caption: "Collect from friends",
       icon: ArrowDownLeft,
-      filter: 'owed' as const,
+      filter: "owed" as const,
     },
     {
-      key: 'owe',
-      label: 'You Owe',
+      key: "owe",
+      label: "You Owe",
       amount: totalOwed,
-      color: '#E53935', // Danger Red
-      caption: 'Settle soon to stay even',
+      color: "#E53935", // Danger Red
+      caption: "Settle soon to stay even",
       icon: ArrowUpRight,
-      filter: 'owing' as const,
+      filter: "owing" as const,
     },
   ];
 
-
-  const handleBalanceScroll = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
-    const nextIndex = Math.round(event.nativeEvent.contentOffset.x / (cardWidth + Spacing.md));
+  const handleBalanceScroll = (
+    event: NativeSyntheticEvent<NativeScrollEvent>,
+  ) => {
+    const nextIndex = Math.round(
+      event.nativeEvent.contentOffset.x / (cardWidth + Spacing.md),
+    );
     if (nextIndex !== activeBalanceCard) {
       setActiveBalanceCard(nextIndex);
     }
@@ -132,29 +156,42 @@ export default function DashboardScreen() {
       <ScrollView
         contentContainerStyle={styles.scrollContent}
         refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={Colors.primary} />
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor={Colors.primary}
+          />
         }
       >
-
         {/* Header */}
         <View style={styles.header}>
           <Image
-            source={require('../../../assets/images/splitea-icon-transparent.png')}
+            source={require("../../../assets/images/splitea-icon-transparent.png")}
             style={styles.logo}
             contentFit="contain"
           />
           <View style={styles.headerRight}>
             <TouchableOpacity style={styles.iconBtn}>
               <Bell size={24} color={Colors.text} />
-              {notifCount > 0 && <View style={styles.badge}><Typography.Caption style={styles.badgeText}>{notifCount > 9 ? '9+' : notifCount}</Typography.Caption></View>}
+              {notifCount > 0 && (
+                <View style={styles.badge}>
+                  <Typography.Caption style={styles.badgeText}>
+                    {notifCount > 9 ? "9+" : notifCount}
+                  </Typography.Caption>
+                </View>
+              )}
             </TouchableOpacity>
           </View>
         </View>
 
         {/* Greeting */}
         <View style={styles.greetingContainer}>
-          <Typography.Header style={styles.greetingTitle}>Welcome back, {user?.first_name || 'there'}</Typography.Header>
-          <Typography.Body style={styles.greetingSubtitle}>Here's your expense summary.</Typography.Body>
+          <Typography.Header style={styles.greetingTitle}>
+            Welcome back, {user?.first_name || "there"}
+          </Typography.Header>
+          <Typography.Body style={styles.greetingSubtitle}>
+            Here's your expense summary.
+          </Typography.Body>
         </View>
 
         <View style={styles.balanceSection}>
@@ -171,18 +208,40 @@ export default function DashboardScreen() {
               <TouchableOpacity
                 key={card.key}
                 activeOpacity={0.85}
-                onPress={() => router.push({ pathname: '/balance-detail', params: { filter: card.filter } })}
-                style={{ width: cardWidth, marginRight: index === balanceCards.length - 1 ? 0 : Spacing.md }}
+                onPress={() =>
+                  router.push({
+                    pathname: "/balance-detail",
+                    params: { filter: card.filter },
+                  })
+                }
+                style={{
+                  width: cardWidth,
+                  marginRight:
+                    index === balanceCards.length - 1 ? 0 : Spacing.md,
+                }}
               >
                 <Card style={styles.summaryCard}>
                   {/* Accent Pill */}
-                  <View style={[styles.accentPill, { backgroundColor: card.color }]} />
+                  <View
+                    style={[styles.accentPill, { backgroundColor: card.color }]}
+                  />
 
                   <View style={styles.cardHeader}>
-                    <View style={[styles.iconCircleMinimal, { backgroundColor: `${card.color}15` }]}>
-                      <card.icon size={20} color={card.color} strokeWidth={2.5} />
+                    <View
+                      style={[
+                        styles.iconCircleMinimal,
+                        { backgroundColor: `${card.color}15` },
+                      ]}
+                    >
+                      <card.icon
+                        size={20}
+                        color={card.color}
+                        strokeWidth={2.5}
+                      />
                     </View>
-                    <Typography.Body style={styles.cardHeaderText}>{card.label}</Typography.Body>
+                    <Typography.Body style={styles.cardHeaderText}>
+                      {card.label}
+                    </Typography.Body>
                   </View>
 
                   <View style={styles.amountContainer}>
@@ -197,7 +256,9 @@ export default function DashboardScreen() {
                   </View>
 
                   <View style={styles.cardFooter}>
-                    <Typography.Caption style={styles.cardFooterText}>{card.caption}</Typography.Caption>
+                    <Typography.Caption style={styles.cardFooterText}>
+                      {card.caption}
+                    </Typography.Caption>
                   </View>
                 </Card>
               </TouchableOpacity>
@@ -210,7 +271,9 @@ export default function DashboardScreen() {
                 key={card.key}
                 style={[
                   styles.balanceDot,
-                  index === activeBalanceCard ? styles.balanceDotActive : { backgroundColor: '#E2E8F0' }
+                  index === activeBalanceCard
+                    ? styles.balanceDotActive
+                    : { backgroundColor: "#E2E8F0" },
                 ]}
               />
             ))}
@@ -219,100 +282,154 @@ export default function DashboardScreen() {
 
         {/* Recent Activity */}
         <View style={styles.recentHeader}>
-          <Typography.SubHeader style={styles.recentTitle}>Recent Activity</Typography.SubHeader>
-          <TouchableOpacity><Typography.Body style={styles.seeAll}>See all</Typography.Body></TouchableOpacity>
+          <Typography.SubHeader style={styles.recentTitle}>
+            Recent Activity
+          </Typography.SubHeader>
+          <TouchableOpacity>
+            <Typography.Body style={styles.seeAll}>See all</Typography.Body>
+          </TouchableOpacity>
         </View>
 
         <Card style={styles.activityPanel}>
           {expenses.length === 0 ? (
             <View style={styles.emptyActivity}>
-              <Typography.Body style={styles.emptyText}>No recent activity yet.</Typography.Body>
+              <Typography.Body style={styles.emptyText}>
+                No recent activity yet.
+              </Typography.Body>
             </View>
           ) : (
             expenses.map((activity, idx) => {
-              const amountOwed = activity.splits?.find((s: any) => s.user_id === user?.user_id)?.amount_owed || 0;
+              const amountOwed =
+                activity.splits?.find((s: any) => s.user_id === user?.user_id)
+                  ?.amount_owed || 0;
               const isPayer = activity.paid_by === user?.user_id;
-              const isSettleUp = activity.expense_type === 'settle-up';
-              const isStripe = isSettleUp && activity.payment_method === 'stripe';
+              const isSettleUp = activity.expense_type === "settle-up";
+              const isStripe =
+                isSettleUp && activity.payment_method === "stripe";
               const settleAmount = Number(activity.total_amount || 0);
 
-              const settleVerb = isStripe ? 'paid with card' : 'settled up';
+              const settleVerb = isStripe ? "paid with card" : "settled up";
 
               return (
                 <View key={activity.expense_id || idx}>
                   <View style={styles.activityItem}>
                     <View style={styles.activityInfo}>
-                      <Typography.Body style={styles.activityName}>{activity.title}</Typography.Body>
+                      <Typography.Body style={styles.activityName}>
+                        {activity.title}
+                      </Typography.Body>
                       <Typography.Caption style={styles.activityDesc}>
                         {isSettleUp
                           ? isPayer
                             ? `You ${settleVerb}`
-                            : `${activity.payer_name || 'They'} ${settleVerb}`
+                            : `${activity.payer_name || "They"} ${settleVerb}`
                           : isPayer
-                            ? 'You paid'
-                            : `${activity.payer_name || 'Someone'} paid`}
+                            ? "You paid"
+                            : `${activity.payer_name || "Someone"} paid`}
                       </Typography.Caption>
                     </View>
                     <View style={styles.activityAmountContainer}>
                       {isSettleUp ? (
-                        <Typography.Body style={[styles.activityAmount, { color: Colors.textSecondary }]}>
-                          {isPayer ? 'You paid' : 'You received'} {formatCurrency(settleAmount)}
+                        <Typography.Body
+                          style={[
+                            styles.activityAmount,
+                            { color: Colors.textSecondary },
+                          ]}
+                        >
+                          {isPayer ? "You paid" : "You received"}{" "}
+                          {formatCurrency(settleAmount)}
                         </Typography.Body>
                       ) : isPayer ? (
-                        <Typography.Body style={[styles.activityAmount, { color: Colors.secondary }]}>
-                          You are owed {formatCurrency(activity.total_amount - amountOwed)}
+                        <Typography.Body
+                          style={[
+                            styles.activityAmount,
+                            { color: Colors.secondary },
+                          ]}
+                        >
+                          You are owed{" "}
+                          {formatCurrency(activity.total_amount - amountOwed)}
                         </Typography.Body>
                       ) : (
-                        <Typography.Body style={[styles.activityAmount, { color: Colors.danger }]}>
+                        <Typography.Body
+                          style={[
+                            styles.activityAmount,
+                            { color: Colors.danger },
+                          ]}
+                        >
                           You owe {formatCurrency(amountOwed)}
                         </Typography.Body>
                       )}
-                      <Typography.Caption style={styles.activityTime}>{getTimeAgo(activity.created_at)}</Typography.Caption>
+                      <Typography.Caption style={styles.activityTime}>
+                        {getTimeAgo(activity.created_at)}
+                      </Typography.Caption>
                     </View>
                   </View>
-                  {idx < expenses.length - 1 ? <View style={styles.activityDivider} /> : null}
+                  {idx < expenses.length - 1 ? (
+                    <View style={styles.activityDivider} />
+                  ) : null}
                 </View>
               );
             })
           )}
         </Card>
-
       </ScrollView>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F8FAFC' }, // Very light slate/blue hint for contrast
-  scrollContent: { padding: Spacing.xl, paddingTop: Platform.OS === 'ios' ? 10 : 40 },
-  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: Spacing.xl },
+  container: { flex: 1, backgroundColor: "#F8FAFC" }, // Very light slate/blue hint for contrast
+  scrollContent: {
+    padding: Spacing.xl,
+    paddingTop: Platform.OS === "ios" ? 10 : 40,
+  },
+  header: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: Spacing.xl,
+  },
   logo: { width: 90, height: 80 },
-  headerRight: { flexDirection: 'row', alignItems: 'center', gap: Spacing.md },
-  iconBtn: { padding: Spacing.xs, position: 'relative' },
-  badge: { position: 'absolute', top: 0, right: 0, backgroundColor: Colors.danger, width: 16, height: 16, borderRadius: 8, justifyContent: 'center', alignItems: 'center', borderWidth: 2, borderColor: Colors.white },
-  badgeText: { color: Colors.white, fontSize: 10, fontWeight: 'bold' },
+  headerRight: { flexDirection: "row", alignItems: "center", gap: Spacing.md },
+  iconBtn: { padding: Spacing.xs, position: "relative" },
+  badge: {
+    position: "absolute",
+    top: 0,
+    right: 0,
+    backgroundColor: Colors.danger,
+    width: 16,
+    height: 16,
+    borderRadius: 8,
+    justifyContent: "center",
+    alignItems: "center",
+    borderWidth: 2,
+    borderColor: Colors.white,
+  },
+  badgeText: { color: Colors.white, fontSize: 10, fontWeight: "bold" },
   greetingContainer: { marginBottom: Spacing.lg },
-  greetingTitle: { fontSize: 26, fontWeight: '800', marginBottom: 4 },
+  greetingTitle: { fontSize: 26, fontWeight: "800", marginBottom: 4 },
   greetingSubtitle: { color: Colors.textSecondary, fontSize: 16 },
   balanceSection: { marginBottom: Spacing.md },
-  balanceScrollContent: { paddingRight: Spacing.xl, paddingVertical: Spacing.lg }, // Added vertical padding for shadow room
+  balanceScrollContent: {
+    paddingRight: Spacing.xl,
+    paddingVertical: Spacing.lg,
+  }, // Added vertical padding for shadow room
   summaryCard: {
     height: 170,
     padding: Spacing.xl,
     borderRadius: 24,
     backgroundColor: Colors.white,
-    justifyContent: 'space-between',
+    justifyContent: "space-between",
     borderWidth: 0,
-    shadowColor: '#000',
+    shadowColor: "#000",
     shadowOffset: { width: 5, height: 12 },
-    shadowOpacity: 0.20,
+    shadowOpacity: 0.2,
     shadowRadius: 1.2,
     elevation: 12,
-    position: 'relative',
-    overflow: 'visible', // Explicitly allow shadow flow
+    position: "relative",
+    overflow: "visible", // Explicitly allow shadow flow
   },
   accentPill: {
-    position: 'absolute',
+    position: "absolute",
     left: 0,
     top: Spacing.xl,
     bottom: Spacing.xl,
@@ -320,35 +437,83 @@ const styles = StyleSheet.create({
     borderTopRightRadius: 4,
     borderBottomRightRadius: 4,
   },
-  cardHeader: { flexDirection: 'row', alignItems: 'center', gap: Spacing.md },
+  cardHeader: { flexDirection: "row", alignItems: "center", gap: Spacing.md },
   iconCircleMinimal: {
     width: 42,
     height: 42,
     borderRadius: 21,
-    justifyContent: 'center',
-    alignItems: 'center'
+    justifyContent: "center",
+    alignItems: "center",
   },
-  cardHeaderText: { color: Colors.textSecondary, fontWeight: '700', fontSize: 13, textTransform: 'uppercase', letterSpacing: 0.8 },
+  cardHeaderText: {
+    color: Colors.textSecondary,
+    fontWeight: "700",
+    fontSize: 13,
+    textTransform: "uppercase",
+    letterSpacing: 0.8,
+  },
   amountContainer: { marginVertical: Spacing.xs },
-  amountText: { color: Colors.text, fontSize: 40, fontWeight: '800', letterSpacing: -1 },
-  cardFooter: { borderTopWidth: 1, borderTopColor: '#F8FAFC', paddingTop: Spacing.sm },
-  cardFooterText: { color: Colors.textSecondary, fontSize: 14, fontWeight: '500' },
-  balanceDots: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 8, marginTop: Spacing.lg },
+  amountText: {
+    color: Colors.text,
+    fontSize: 40,
+    fontWeight: "800",
+    letterSpacing: -1,
+  },
+  cardFooter: {
+    borderTopWidth: 1,
+    borderTopColor: "#F8FAFC",
+    paddingTop: Spacing.sm,
+  },
+  cardFooterText: {
+    color: Colors.textSecondary,
+    fontSize: 14,
+    fontWeight: "500",
+  },
+  balanceDots: {
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
+    gap: 8,
+    marginTop: Spacing.lg,
+  },
   balanceDot: { width: 8, height: 8, borderRadius: 4 },
   balanceDotActive: { width: 20, height: 8, backgroundColor: Colors.text },
-  recentHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: Spacing.lg },
+  recentHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: Spacing.lg,
+  },
   recentTitle: { fontSize: 18, color: Colors.textSecondary, marginBottom: 0 },
-  seeAll: { color: Colors.primary, fontWeight: '700' },
+  seeAll: { color: Colors.primary, fontWeight: "700" },
   activityPanel: { paddingHorizontal: Spacing.md, paddingVertical: Spacing.sm },
-  activityItem: { flexDirection: 'row', alignItems: 'center', paddingVertical: Spacing.md },
+  activityItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: Spacing.md,
+  },
   activityDivider: { height: 1, backgroundColor: Colors.itemBorder },
-  avatarPlaceholder: { width: 48, height: 48, borderRadius: 24, backgroundColor: '#F3F4F6', marginRight: Spacing.md, borderWidth: 1, borderColor: Colors.itemBorder },
+  avatarPlaceholder: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: Colors.surfaceMuted,
+    marginRight: Spacing.md,
+  },
   activityInfo: { flex: 1 },
-  activityName: { fontWeight: '700', fontSize: 16, marginBottom: 2 },
+  activityName: { fontWeight: "700", fontSize: 16, marginBottom: 2 },
   activityDesc: { color: Colors.textSecondary },
-  activityAmountContainer: { alignItems: 'flex-end' },
-  activityAmount: { fontWeight: '700', fontSize: 13, marginBottom: 2 },
+  activityAmountContainer: { alignItems: "flex-end" },
+  activityAmount: { fontWeight: "700", fontSize: 13, marginBottom: 2 },
   activityTime: { color: Colors.textSecondary, fontSize: 12 },
-  emptyActivity: { padding: Spacing.xl, alignItems: 'center', backgroundColor: '#FFFDFC', borderRadius: 20, borderWidth: 1.5, borderColor: Colors.itemBorder, borderStyle: 'dashed' },
-  emptyText: { color: Colors.textSecondary, fontStyle: 'italic' },
+  emptyActivity: {
+    padding: Spacing.xl,
+    alignItems: "center",
+    backgroundColor: Colors.white,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    borderStyle: "dashed",
+  },
+  emptyText: { color: Colors.textSecondary, fontStyle: "italic" },
 });

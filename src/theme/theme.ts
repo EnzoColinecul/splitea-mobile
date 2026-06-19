@@ -14,7 +14,7 @@ export const Colors = {
   text: "#2D261B", // Darker, warmer text
   textSecondary: "#6B7280", // Better gray for secondary text
   border: "#E2E8F0", // Slightly more visible gray border
-  itemBorder: "#F0EBE1", // Warm border for cards
+  itemBorder: "#EBEBEB", // Neutral light gray border
   cardShadow: "rgba(0,0,0,0.06)",
 };
 

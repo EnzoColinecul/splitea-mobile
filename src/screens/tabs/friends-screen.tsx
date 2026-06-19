@@ -257,13 +257,17 @@ const styles = StyleSheet.create({
   scroll: { padding: Spacing.lg, paddingBottom: 40 },
   sectionTitle: { fontSize: 12, fontWeight: '700', color: Colors.textSecondary, letterSpacing: 1.2, marginBottom: Spacing.md },
   list: { gap: Spacing.md },
-  friendCard: { 
-    flexDirection: 'row', 
-    alignItems: 'center', 
+  friendCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
     padding: Spacing.md,
     backgroundColor: Colors.white,
-    borderWidth: 1,
-    borderColor: Colors.itemBorder,
+    borderRadius: BorderRadius.card,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.06,
+    shadowRadius: 6,
+    elevation: 2,
   },
   avatarPlaceholder: { 
     width: 48, 

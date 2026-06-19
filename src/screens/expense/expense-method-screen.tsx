@@ -447,7 +447,7 @@ const styles = StyleSheet.create({
     height: 20,
     borderRadius: 10,
     borderWidth: 1.5,
-    borderColor: '#D4C5B0',
+    borderColor: '#D1D5DB',
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -466,7 +466,7 @@ const styles = StyleSheet.create({
   },
   avatarText: { fontWeight: 'bold', fontSize: 18 },
   itemName: { flex: 1, fontSize: 16, fontWeight: '600', color: Colors.text },
-  checkbox: { width: 24, height: 24, borderRadius: 12, borderWidth: 2, borderColor: '#D4C5B0', justifyContent: 'center', alignItems: 'center' },
+  checkbox: { width: 24, height: 24, borderRadius: 12, borderWidth: 2, borderColor: '#D1D5DB', justifyContent: 'center', alignItems: 'center' },
   checkboxActive: { backgroundColor: Colors.primary, borderColor: Colors.primary },
   check: { color: Colors.white, fontSize: 14, fontWeight: 'bold' },
   footer: {

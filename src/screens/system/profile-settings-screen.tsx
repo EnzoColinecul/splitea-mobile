@@ -271,9 +271,12 @@ const styles = StyleSheet.create({
   preferencesCard: {
     backgroundColor: Colors.white,
     borderRadius: BorderRadius.card,
-    borderWidth: 1.5,
-    borderColor: Colors.itemBorder,
     overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.06,
+    shadowRadius: 6,
+    elevation: 2,
   },
   preferenceItem: {
     flexDirection: 'row',
@@ -305,8 +308,6 @@ const styles = StyleSheet.create({
     padding: Spacing.lg,
     backgroundColor: '#F9FAFB',
     borderRadius: BorderRadius.lg,
-    borderWidth: 1,
-    borderColor: Colors.itemBorder,
   },
   infoText: {
     textAlign: 'center',
