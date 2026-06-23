@@ -152,7 +152,7 @@ export default function DashboardScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={styles.container} edges={["top"]}>
       <ScrollView
         contentContainerStyle={styles.scrollContent}
         refreshControl={
@@ -377,10 +377,11 @@ export default function DashboardScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#F8FAFC" }, // Very light slate/blue hint for contrast
+  container: { flex: 1, backgroundColor: Colors.background }, // Very light slate/blue hint for contrast
   scrollContent: {
-    padding: Spacing.xl,
+    paddingHorizontal: Spacing.xl,
     paddingTop: Platform.OS === "ios" ? 10 : 40,
+    paddingBottom: Spacing.xl,
   },
   header: {
     flexDirection: "row",
@@ -408,11 +409,11 @@ const styles = StyleSheet.create({
   greetingContainer: { marginBottom: Spacing.lg },
   greetingTitle: { fontSize: 26, fontWeight: "800", marginBottom: 4 },
   greetingSubtitle: { color: Colors.textSecondary, fontSize: 16 },
-  balanceSection: { marginBottom: Spacing.md },
+  balanceSection: { marginBottom: Spacing.xs },
   balanceScrollContent: {
     paddingRight: Spacing.xl,
-    paddingVertical: Spacing.lg,
-  }, // Added vertical padding for shadow room
+    paddingVertical: Spacing.sm,
+  },
   summaryCard: {
     height: 170,
     padding: Spacing.xl,
@@ -474,7 +475,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     gap: 8,
-    marginTop: Spacing.lg,
+    marginTop: Spacing.sm,
   },
   balanceDot: { width: 8, height: 8, borderRadius: 4 },
   balanceDotActive: { width: 20, height: 8, backgroundColor: Colors.text },

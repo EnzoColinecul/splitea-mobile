@@ -9,6 +9,7 @@ export default function ExpenseLayout() {
       <Stack.Screen name="scan-receipt" />
       <Stack.Screen name="receipt-split-preview" />
       <Stack.Screen name="view" />
+      <Stack.Screen name="group-participants" />
     </Stack>
   );
 }

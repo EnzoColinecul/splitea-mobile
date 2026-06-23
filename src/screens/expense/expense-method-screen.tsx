@@ -1,5 +1,4 @@
 import apiClient from '@/api/api-client';
-import { groupsApi } from '@/api/social';
 import { Button, Typography } from '@/components/common/shared';
 import { BorderRadius, Colors, Spacing } from '@/theme/theme';
 import { Stack, useRouter } from 'expo-router';
@@ -7,6 +6,15 @@ import { ChevronLeft, Search } from 'lucide-react-native';
 import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+
+function groupByLetter<T>(items: T[], key: (i: T) => string) {
+  const map: Record<string, T[]> = {};
+  items.forEach(i => {
+    const l = key(i).charAt(0).toUpperCase();
+    (map[l] ??= []).push(i);
+  });
+  return Object.keys(map).sort().map(l => ({ letter: l, items: map[l] }));
+}
 
 export default function ExpenseMethodScreen() {
   const router = useRouter();
@@ -20,20 +28,10 @@ export default function ExpenseMethodScreen() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedFriends, setSelectedFriends] = useState<string[]>([]);
   const [selectedGroup, setSelectedGroup] = useState<string | null>(null);
-  const [groupParticipants, setGroupParticipants] = useState<any[]>([]);
-  const [loadingParticipants, setLoadingParticipants] = useState(false);
 
   useEffect(() => {
     fetchData();
   }, []);
-
-  useEffect(() => {
-    if (selectedGroup) {
-      fetchParticipants(selectedGroup);
-    } else {
-      setGroupParticipants([]);
-    }
-  }, [selectedGroup]);
 
   const fetchData = async () => {
     try {
@@ -46,7 +44,6 @@ export default function ExpenseMethodScreen() {
       setGroups(gRes.data.groups || []);
       setCurrentUser(uRes.data);
 
-      // Auto-select "Me"
       if (uRes.data) {
         setSelectedFriends([uRes.data.user_id]);
       }
@@ -58,55 +55,18 @@ export default function ExpenseMethodScreen() {
     }
   };
 
-  const fetchParticipants = async (groupId: string) => {
-    setLoadingParticipants(true);
-    try {
-      const { users } = await groupsApi.getUsers(groupId);
-      // Map users to participants format and default all to selected: true
-      const mapped = users.map((u: any) => ({
-        id: u.user_id || u.id,
-        name: u.first_name ? `${u.first_name} ${u.last_name}` : (u.name || 'Member'),
-        isSelected: true,
-        isMe: currentUser && (u.user_id === currentUser.user_id || u.id === currentUser.user_id)
-      }));
-      setGroupParticipants(mapped);
-    } catch (err) {
-      Alert.alert('Error', 'Could not load group members.');
-    } finally {
-      setLoadingParticipants(false);
-    }
-  };
-
   const toggleFriend = (user_id: string) => {
     setSelectedFriends(prev =>
       prev.includes(user_id) ? prev.filter(f => f !== user_id) : [...prev, user_id]
     );
   };
 
-  const toggleParticipant = (participantId: string) => {
-    setGroupParticipants(prev =>
-      prev.map(p =>
-        p.id === participantId ? { ...p, isSelected: !p.isSelected } : p
-      )
-    );
-  };
-
-  const selectGroup = (id: string) => {
-    if (selectedGroup === id) {
-      setSelectedGroup(null);
-    } else {
-      setSelectedGroup(id);
-    }
-  };
-
   const switchTab = (tab: 'friends' | 'groups') => {
     if (tab === activeTab) return;
     setActiveTab(tab);
     setSearchQuery('');
-    // Reset selections when switching tabs
     setSelectedFriends(currentUser ? [currentUser.user_id] : []);
     setSelectedGroup(null);
-    setGroupParticipants([]);
   };
 
   const filteredFriends = friends.filter(f =>
@@ -117,25 +77,27 @@ export default function ExpenseMethodScreen() {
     g.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
+  const sortedFriends = [...filteredFriends].sort((a, b) =>
+    a.first_name.localeCompare(b.first_name)
+  );
+  const friendSections = groupByLetter(sortedFriends, f => f.first_name);
+
+  const sortedGroups = [...filteredGroups].sort((a, b) =>
+    a.name.localeCompare(b.name)
+  );
+  const groupSections = groupByLetter(sortedGroups, g => g.name);
+
   const handleNext = () => {
-    let participants: any[] = [];
     if (activeTab === 'groups') {
       if (!selectedGroup) {
         Alert.alert('Select a group', 'Please choose a group to split with.');
         return;
       }
-      participants = groupParticipants
-        .filter(p => p.isSelected)
-        .map(p => ({
-          id: p.id,
-          name: p.name,
-          isGroup: false
-        }));
-
-      if (participants.length === 0) {
-        Alert.alert('Select participants', 'Please select at least one person from the group.');
-        return;
-      }
+      const group = groups.find(g => g.group_id === selectedGroup);
+      router.push({
+        pathname: '/expense/group-participants',
+        params: { groupId: selectedGroup, groupName: group?.name ?? '' },
+      });
     } else {
       if (selectedFriends.length === 0) {
         Alert.alert('Select friends', 'Please choose at least one friend to split with.');
@@ -143,13 +105,12 @@ export default function ExpenseMethodScreen() {
       }
 
       const selectedInList = friends.filter(f => selectedFriends.includes(f.user_id));
-      participants = selectedInList.map(f => ({
+      const participants: any[] = selectedInList.map(f => ({
         id: f.user_id,
         name: `${f.first_name} ${f.last_name}`
       }));
 
       if (currentUser && selectedFriends.includes(currentUser.user_id)) {
-        // Only add if not already in list
         if (!participants.find(p => p.id === currentUser.user_id)) {
           participants.unshift({
             id: currentUser.user_id,
@@ -157,15 +118,14 @@ export default function ExpenseMethodScreen() {
           });
         }
       }
-    }
 
-    router.push({
-      pathname: '/expense/choice',
-      params: {
-        participants: JSON.stringify(participants),
-        groupId: selectedGroup || undefined
-      }
-    });
+      router.push({
+        pathname: '/expense/choice',
+        params: {
+          participants: JSON.stringify(participants),
+        }
+      });
+    }
   };
 
   if (loading) {
@@ -220,107 +180,92 @@ export default function ExpenseMethodScreen() {
 
         {activeTab === 'groups' ? (
           <View style={styles.listContainer}>
-            {filteredGroups.length === 0 ? (
+            {groupSections.length === 0 ? (
               <Text style={styles.emptyText}>No groups found.</Text>
             ) : (
-              filteredGroups.map(group => {
-                const isSelected = selectedGroup === group.group_id;
-                return (
-                  <View key={group.group_id}>
-                    <TouchableOpacity
-                      style={[
-                        styles.itemRow,
-                        isSelected && styles.itemRowSelected,
-                        isSelected && { borderBottomLeftRadius: 0, borderBottomRightRadius: 0 }
-                      ]}
-                      onPress={() => selectGroup(group.group_id)}
-                    >
-                      <View style={[styles.avatar, { backgroundColor: '#E0F2FE' }]}>
-                        <Text style={[styles.avatarText, { color: '#0369A1' }]}>{group.name.charAt(0)}</Text>
-                      </View>
-                      <Text style={styles.itemName}>{group.name}</Text>
-                      <View style={[styles.checkbox, isSelected && styles.checkboxActive]}>
-                        {isSelected && <Text style={styles.check}>✓</Text>}
-                      </View>
-                    </TouchableOpacity>
-
-                    {isSelected && (
-                      <View style={styles.participantsContainer}>
-                        <Text style={styles.participantsTitle}>PARTICIPANTS</Text>
-                        {loadingParticipants ? (
-                          <ActivityIndicator size="small" color={Colors.primary} style={{ marginVertical: Spacing.md }} />
-                        ) : (
-                          groupParticipants.map(participant => (
-                            <TouchableOpacity
-                              key={participant.id}
-                              style={styles.participantRow}
-                              onPress={() => toggleParticipant(participant.id)}
-                            >
-                              <View style={[styles.miniAvatar, { backgroundColor: participant.isMe ? '#FEE2E2' : '#F3F4F6' }]}>
-                                <Text style={[styles.miniAvatarText, { color: participant.isMe ? '#B91C1C' : '#4B5563' }]}>
-                                  {participant.name.charAt(0)}
-                                </Text>
-                              </View>
-                              <Text style={styles.participantName}>{participant.name} {participant.isMe ? '(You)' : ''}</Text>
-                              <View style={[styles.miniCheckbox, participant.isSelected && styles.miniCheckboxActive]}>
-                                {participant.isSelected && <Text style={styles.miniCheck}>✓</Text>}
-                              </View>
-                            </TouchableOpacity>
-                          ))
-                        )}
-                      </View>
-                    )}
+              groupSections.map(section => (
+                <View key={section.letter}>
+                  <Text style={styles.sectionLetter}>{section.letter}</Text>
+                  <View style={styles.sectionCard}>
+                    {section.items.map((group, idx) => {
+                      const isSelected = selectedGroup === group.group_id;
+                      return (
+                        <View key={group.group_id}>
+                          <TouchableOpacity
+                            style={[styles.itemRow, isSelected && styles.itemRowSelected]}
+                            onPress={() => setSelectedGroup(isSelected ? null : group.group_id)}
+                          >
+                            <View style={[styles.avatar, { backgroundColor: '#E0F2FE' }]}>
+                              <Text style={[styles.avatarText, { color: '#0369A1' }]}>{group.name.charAt(0).toUpperCase()}</Text>
+                            </View>
+                            <Text style={styles.itemName}>{group.name}</Text>
+                            <View style={[styles.checkbox, isSelected && styles.checkboxActive]}>
+                              {isSelected && <Text style={styles.check}>✓</Text>}
+                            </View>
+                          </TouchableOpacity>
+                          {idx < section.items.length - 1 && <View style={styles.divider} />}
+                        </View>
+                      );
+                    })}
                   </View>
-                );
-              })
+                </View>
+              ))
             )}
           </View>
         ) : (
           <View style={styles.listContainer}>
-            {/* "Me" option always first in friends list, unless search filters it out? */}
-            {(currentUser && (!searchQuery || 'Me (You)'.toLowerCase().includes(searchQuery.toLowerCase()))) && (
-              <TouchableOpacity
-                key="me"
-                style={[
-                  styles.itemRow,
-                  selectedFriends.includes(currentUser.user_id) && styles.itemRowSelected
-                ]}
-                onPress={() => toggleFriend(currentUser.user_id)}
-              >
-                <View style={[styles.avatar, { backgroundColor: '#FEE2E2' }]}>
-                  <Text style={[styles.avatarText, { color: '#B91C1C' }]}>{currentUser.first_name.charAt(0)}</Text>
-                </View>
-                <Text style={styles.itemName}> {currentUser.first_name} {currentUser.last_name} (You)</Text>
-                <View style={[styles.checkbox, selectedFriends.includes(currentUser.user_id) && styles.checkboxActive]}>
-                  {selectedFriends.includes(currentUser.user_id) && <Text style={styles.check}>✓</Text>}
-                </View>
-              </TouchableOpacity>
+            {currentUser && (!searchQuery || `${currentUser.first_name} ${currentUser.last_name}`.toLowerCase().includes(searchQuery.toLowerCase())) && (
+              <View style={styles.sectionCard}>
+                <TouchableOpacity
+                  style={[styles.itemRow, selectedFriends.includes(currentUser.user_id) && styles.itemRowSelected]}
+                  onPress={() => toggleFriend(currentUser.user_id)}
+                >
+                  <View style={[styles.avatar, { backgroundColor: '#FEE2E2' }]}>
+                    <Text style={[styles.avatarText, { color: '#B91C1C' }]}>{currentUser.first_name.charAt(0)}</Text>
+                  </View>
+                  <View style={styles.nameContainer}>
+                    <Text style={styles.itemName}>{currentUser.first_name} {currentUser.last_name}</Text>
+                    <Text style={styles.youTag}>You</Text>
+                  </View>
+                  <View style={[styles.checkbox, selectedFriends.includes(currentUser.user_id) && styles.checkboxActive]}>
+                    {selectedFriends.includes(currentUser.user_id) && <Text style={styles.check}>✓</Text>}
+                  </View>
+                </TouchableOpacity>
+              </View>
             )}
 
-            {filteredFriends.length === 0 ? (
-              <Text style={styles.emptyText}>{searchQuery ? 'No friends found.' : "You don't have any friends yet."}</Text>
+            {friendSections.length === 0 && searchQuery ? (
+              <Text style={styles.emptyText}>No friends found.</Text>
+            ) : friendSections.length === 0 ? (
+              <Text style={styles.emptyText}>You don't have any friends yet.</Text>
             ) : (
-              filteredFriends.map(friend => {
-                const isSelected = selectedFriends.includes(friend.user_id);
-                return (
-                  <TouchableOpacity
-                    key={friend.friendship_id}
-                    style={[
-                      styles.itemRow,
-                      isSelected && styles.itemRowSelected
-                    ]}
-                    onPress={() => toggleFriend(friend.user_id)}
-                  >
-                    <View style={[styles.avatar, { backgroundColor: '#F0FDF4' }]}>
-                      <Text style={[styles.avatarText, { color: '#15803D' }]}>{friend.first_name.charAt(0)}</Text>
-                    </View>
-                    <Text style={styles.itemName}>{friend.first_name} {friend.last_name}</Text>
-                    <View style={[styles.checkbox, isSelected && styles.checkboxActive]}>
-                      {isSelected && <Text style={styles.check}>✓</Text>}
-                    </View>
-                  </TouchableOpacity>
-                )
-              })
+              friendSections.map(section => (
+                <View key={section.letter}>
+                  <Text style={styles.sectionLetter}>{section.letter}</Text>
+                  <View style={styles.sectionCard}>
+                    {section.items.map((friend, idx) => {
+                      const isSelected = selectedFriends.includes(friend.user_id);
+                      return (
+                        <View key={friend.friendship_id}>
+                          <TouchableOpacity
+                            style={[styles.itemRow, isSelected && styles.itemRowSelected]}
+                            onPress={() => toggleFriend(friend.user_id)}
+                          >
+                            <View style={[styles.avatar, { backgroundColor: '#F0FDF4' }]}>
+                              <Text style={[styles.avatarText, { color: '#15803D' }]}>{friend.first_name.charAt(0)}</Text>
+                            </View>
+                            <Text style={styles.itemName}>{friend.first_name} {friend.last_name}</Text>
+                            <View style={[styles.checkbox, isSelected && styles.checkboxActive]}>
+                              {isSelected && <Text style={styles.check}>✓</Text>}
+                            </View>
+                          </TouchableOpacity>
+                          {idx < section.items.length - 1 && <View style={styles.divider} />}
+                        </View>
+                      );
+                    })}
+                  </View>
+                </View>
+              ))
             )}
           </View>
         )}
@@ -328,9 +273,9 @@ export default function ExpenseMethodScreen() {
 
       <View style={styles.footer}>
         <Button
-          title="Confirm Participants"
+          title={activeTab === 'groups' ? 'Select Participants →' : 'Confirm Participants'}
           onPress={handleNext}
-          disabled={!selectedGroup && selectedFriends.length === 0}
+          disabled={activeTab === 'groups' ? !selectedGroup : selectedFriends.length === 0}
           style={styles.nextBtn}
         />
       </View>
@@ -353,9 +298,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.md,
     height: 50,
     borderRadius: 15,
-    borderWidth: 1,
-    borderColor: Colors.itemBorder,
     marginBottom: Spacing.md,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 1,
   },
   searchInput: {
     flex: 1,
@@ -385,77 +333,48 @@ const styles = StyleSheet.create({
   activeTabText: {
     color: Colors.primary,
   },
-  sectionTitle: { marginBottom: Spacing.md, fontSize: 13, letterSpacing: 1.2, color: Colors.textSecondary, fontWeight: '700' },
-  listContainer: { gap: Spacing.sm },
+  listContainer: { gap: 0 },
   emptyText: { color: Colors.textSecondary, fontStyle: 'italic', paddingHorizontal: Spacing.md, textAlign: 'center', marginTop: Spacing.xl },
+  sectionLetter: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: Colors.textSecondary,
+    letterSpacing: 0.5,
+    paddingHorizontal: Spacing.sm,
+    paddingTop: Spacing.md,
+    paddingBottom: Spacing.xs,
+  },
+  sectionCard: {
+    backgroundColor: Colors.white,
+    borderRadius: BorderRadius.card,
+    overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.06,
+    shadowRadius: 6,
+    elevation: 2,
+    marginBottom: Spacing.sm,
+  },
   itemRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: Spacing.md,
-    backgroundColor: Colors.white,
-    borderRadius: 24,
-    borderWidth: 1.5,
-    borderColor: Colors.itemBorder,
+    paddingHorizontal: Spacing.lg,
+    paddingVertical: Spacing.md,
   },
   itemRowSelected: {
-    borderColor: Colors.itemBorder,
     backgroundColor: '#FFF9F4',
   },
-  participantsContainer: {
-    backgroundColor: Colors.white,
-    borderLeftWidth: 1.5,
-    borderRightWidth: 1.5,
-    borderBottomWidth: 1.5,
-    borderColor: Colors.itemBorder,
-    borderBottomLeftRadius: 24,
-    borderBottomRightRadius: 24,
-    paddingHorizontal: Spacing.md,
-    paddingBottom: Spacing.md,
-    marginTop: -1,
-    marginBottom: Spacing.sm,
-  },
-  participantsTitle: {
-    fontSize: 10,
+  divider: { height: 1, backgroundColor: Colors.background, marginLeft: 76 },
+  nameContainer: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: Spacing.sm },
+  youTag: {
+    fontSize: 12,
     fontWeight: '700',
-    color: Colors.textSecondary,
-    letterSpacing: 1,
-    marginBottom: Spacing.sm,
-    marginTop: Spacing.xs,
-  },
-  participantRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: Spacing.sm,
-  },
-  participantName: {
-    flex: 1,
-    fontSize: 14,
-    color: Colors.text,
-    fontWeight: '500',
-  },
-  miniAvatar: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: Spacing.sm,
-  },
-  miniAvatarText: { fontSize: 12, fontWeight: 'bold' },
-  miniCheckbox: {
-    width: 20,
-    height: 20,
+    color: Colors.primary,
+    backgroundColor: '#FFF3EC',
+    paddingHorizontal: 8,
+    paddingVertical: 2,
     borderRadius: 10,
-    borderWidth: 1.5,
-    borderColor: '#D1D5DB',
-    justifyContent: 'center',
-    alignItems: 'center',
   },
-  miniCheckboxActive: {
-    backgroundColor: Colors.primary,
-    borderColor: Colors.primary,
-  },
-  miniCheck: { color: Colors.white, fontSize: 10, fontWeight: 'bold' },
   avatar: {
     width: 44,
     height: 44,

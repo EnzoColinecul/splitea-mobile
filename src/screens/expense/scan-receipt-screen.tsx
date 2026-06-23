@@ -455,8 +455,11 @@ const styles = StyleSheet.create({
     padding: Spacing.md,
     borderRadius: BorderRadius.card,
     backgroundColor: Colors.white,
-    borderWidth: 1.5,
-    borderColor: Colors.itemBorder,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.06,
+    shadowRadius: 6,
+    elevation: 2,
     minHeight: 100,
   },
   instructionInput: {
