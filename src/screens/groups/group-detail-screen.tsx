@@ -599,7 +599,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.lg,
     paddingVertical: Spacing.md,
     marginBottom: Spacing.sm,
-    backgroundColor: "#F8FAFC",
+    backgroundColor: Colors.white,
     borderRadius: 24,
     borderColor: Colors.itemBorder,
   },
