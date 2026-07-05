@@ -37,7 +37,7 @@ export default function DashboardScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [activeBalanceCard, setActiveBalanceCard] = useState(0);
   const { width: windowWidth } = useWindowDimensions();
-  const cardWidth = windowWidth - Spacing.xl * 2;
+  const cardWidth = windowWidth - Spacing.xl * 2 - Spacing.md;
 
   const fetchData = useCallback(async () => {
     try {
@@ -409,9 +409,9 @@ const styles = StyleSheet.create({
   greetingContainer: { marginBottom: Spacing.lg },
   greetingTitle: { fontSize: 26, fontWeight: "800", marginBottom: 4 },
   greetingSubtitle: { color: Colors.textSecondary, fontSize: 16 },
-  balanceSection: { marginBottom: Spacing.xs },
+  balanceSection: { marginBottom: Spacing.xs, marginHorizontal: -Spacing.xl },
   balanceScrollContent: {
-    paddingRight: Spacing.xl,
+    paddingHorizontal: Spacing.xl,
     paddingVertical: Spacing.sm,
   },
   summaryCard: {
