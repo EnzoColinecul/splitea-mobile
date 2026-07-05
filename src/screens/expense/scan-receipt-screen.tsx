@@ -206,7 +206,7 @@ export default function ScanReceiptScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={styles.container} edges={["top"]}>
       <Stack.Screen options={{ headerShown: false }} />
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : "height"}
@@ -299,7 +299,7 @@ export default function ScanReceiptScreen() {
               onChangeText={setInstruction}
               placeholder='e.g. "Burgers equal, drinks only Juan"'
               multiline
-              placeholderTextColor="#A09787"
+              placeholderTextColor={Colors.textSecondary}
               editable={!isBusy}
             />
             <TouchableOpacity
@@ -377,7 +377,7 @@ const styles = StyleSheet.create({
   imageCardReady: {
     borderColor: "#D1F3DB",
     borderStyle: "solid",
-    backgroundColor: "#F4FFF7",
+    backgroundColor: Colors.successSoft,
   },
   preview: { width: "100%", height: "100%" },
   placeholder: { alignItems: "center", gap: Spacing.md },
@@ -473,7 +473,7 @@ const styles = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: 22,
-    backgroundColor: "#F8F9FA",
+    backgroundColor: Colors.surfaceMuted,
     justifyContent: "center",
     alignItems: "center",
   },

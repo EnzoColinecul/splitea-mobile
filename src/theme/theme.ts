@@ -16,6 +16,7 @@ export const Colors = {
   border: "#E2E8F0", // Slightly more visible gray border
   itemBorder: "#EBEBEB", // Neutral light gray border
   cardShadow: "rgba(0,0,0,0.06)",
+  tabIndicator: "rgba(120, 120, 128, 0.16)", // Translucent pill behind active tab
 };
 
 export const Spacing = {

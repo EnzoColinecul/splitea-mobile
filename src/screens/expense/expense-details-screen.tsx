@@ -251,7 +251,7 @@ export default function ExpenseDetailsScreen() {
 
   if (selectingPayer) {
     return (
-      <SafeAreaView style={styles.container}>
+      <SafeAreaView style={styles.container} edges={["top"]}>
         <Stack.Screen options={{ headerShown: false }} />
         <View style={styles.header}>
           <TouchableOpacity
@@ -587,7 +587,7 @@ const styles = StyleSheet.create({
   },
   segmentedControl: {
     flexDirection: "row",
-    backgroundColor: "#F1F5F9", // Cleaner light gray
+    backgroundColor: Colors.surfaceMuted,
     borderRadius: 14,
     padding: 2,
     height: 48,
@@ -630,7 +630,7 @@ const styles = StyleSheet.create({
   attachCard: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#F9FAFB",
+    backgroundColor: Colors.background,
     borderRadius: BorderRadius.card,
     padding: Spacing.lg,
     borderWidth: 1,
@@ -775,7 +775,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     padding: Spacing.md,
-    backgroundColor: "#F9FAFB",
+    backgroundColor: Colors.background,
     borderRadius: BorderRadius.lg,
     borderWidth: 1.5,
     borderColor: Colors.itemBorder,
@@ -814,9 +814,9 @@ const styles = StyleSheet.create({
     right: 0,
     padding: Spacing.xl,
     paddingBottom: Spacing.xl + 20,
-    backgroundColor: Colors.white,
+    backgroundColor: "rgba(255,255,255,0.95)",
     borderTopWidth: 1,
     borderTopColor: Colors.itemBorder,
   },
-  createBtn: { height: 56, borderRadius: BorderRadius.md },
+  createBtn: { height: 56, borderRadius: BorderRadius.round },
 });

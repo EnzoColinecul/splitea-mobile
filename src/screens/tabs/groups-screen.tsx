@@ -7,24 +7,35 @@ import { useFocusEffect } from "@react-navigation/native";
 import { useRouter } from "expo-router";
 import {
   ChevronRight,
-  Pencil,
   Pin,
-  PinOff,
   Plus,
+  Search,
   Users,
 } from "lucide-react-native";
 import React, { useCallback, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
-  FlatList,
   RefreshControl,
+  ScrollView,
   StyleSheet,
   Text,
+  TextInput,
   TouchableOpacity,
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+
+function groupByLetter<T>(items: T[], key: (i: T) => string) {
+  const map: Record<string, T[]> = {};
+  items.forEach((i) => {
+    const l = key(i).charAt(0).toUpperCase();
+    (map[l] ??= []).push(i);
+  });
+  return Object.keys(map)
+    .sort()
+    .map((l) => ({ letter: l, items: map[l] }));
+}
 
 export default function GroupsScreen() {
   const router = useRouter();
@@ -32,6 +43,7 @@ export default function GroupsScreen() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [pinningId, setPinningId] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
 
   const fetchGroups = useCallback(async () => {
     try {
@@ -75,9 +87,18 @@ export default function GroupsScreen() {
     }
   };
 
-  const renderGroupItem = ({ item, index }: { item: Group; index: number }) => {
-    const isLast = index === groups.length - 1;
-    return (
+  const filtered = groups.filter((g) =>
+    g.name.toLowerCase().includes(searchQuery.toLowerCase()),
+  );
+  const pinnedGroups = filtered.filter((g) => g.is_pinned);
+  const unpinnedGroups = filtered.filter((g) => !g.is_pinned);
+  const sortedUnpinned = [...unpinnedGroups].sort((a, b) =>
+    a.name.localeCompare(b.name),
+  );
+  const alphaSections = groupByLetter(sortedUnpinned, (g) => g.name);
+
+  const renderGroupRow = (item: Group, isLast: boolean) => (
+    <View key={item.group_id}>
       <TouchableOpacity
         activeOpacity={0.75}
         onPress={() =>
@@ -86,14 +107,31 @@ export default function GroupsScreen() {
             params: { groupId: item.group_id },
           } as never)
         }
-        style={[styles.listItem, !isLast && styles.listItemBorder]}
+        onLongPress={() =>
+          Alert.alert(item.name, undefined, [
+            {
+              text: item.is_pinned ? "Unpin" : "Pin",
+              onPress: () => togglePin(item),
+            },
+            {
+              text: "Edit Group",
+              onPress: () =>
+                router.push({
+                  pathname: "/edit-group" as never,
+                  params: { groupId: item.group_id },
+                } as never),
+            },
+            { text: "Cancel", style: "cancel" },
+          ])
+        }
+        style={styles.itemRow}
       >
         <View style={styles.groupInfo}>
           <Avatar
             imageUrl={item.picture_url}
             emoji={item.emoji}
             name={item.name}
-            size={56}
+            size={44}
             backgroundColor="#EEF2FF"
             textColor={Colors.primary}
           />
@@ -102,54 +140,23 @@ export default function GroupsScreen() {
               <Typography.Body style={styles.groupName} numberOfLines={1}>
                 {item.name}
               </Typography.Body>
-              {item.is_pinned && (
-                <View style={styles.pinBadge}>
-                  <Pin size={12} color={Colors.primary} fill={Colors.primary} />
-                </View>
-              )}
             </View>
             <View style={styles.memberRow}>
-              <Users size={14} color={Colors.textSecondary} />
-              <Typography.Caption style={styles.memberCount}>
+              <Users size={13} color={Colors.textSecondary} />
+              <Text style={styles.memberCount}>
                 {item.members_count || 0} members
-              </Typography.Caption>
+              </Text>
             </View>
           </View>
         </View>
-        <View style={styles.rowActions}>
-          <TouchableOpacity
-            hitSlop={10}
-            onPress={() => togglePin(item)}
-            disabled={pinningId === item.group_id}
-            style={styles.iconBtn}
-          >
-            {item.is_pinned ? (
-              <PinOff size={18} color={Colors.primary} />
-            ) : (
-              <Pin size={18} color={Colors.textSecondary} />
-            )}
-          </TouchableOpacity>
-          <TouchableOpacity
-            hitSlop={10}
-            onPress={() =>
-              router.push({
-                pathname: "/edit-group" as never,
-                params: { groupId: item.group_id },
-              } as never)
-            }
-            style={styles.iconBtn}
-          >
-            <Pencil size={18} color={Colors.textSecondary} />
-          </TouchableOpacity>
-          <ChevronRight
-            size={16}
-            color={Colors.textSecondary}
-            style={{ marginLeft: 4 }}
-          />
-        </View>
+        <ChevronRight size={16} color={Colors.textSecondary} />
       </TouchableOpacity>
-    );
-  };
+      {!isLast && <View style={styles.divider} />}
+    </View>
+  );
+
+  const hasNoResults =
+    groups.length > 0 && searchQuery.length > 0 && filtered.length === 0;
 
   return (
     <SafeAreaView style={styles.container} edges={["top"]}>
@@ -168,12 +175,20 @@ export default function GroupsScreen() {
         <View style={styles.center}>
           <ActivityIndicator size="large" color={Colors.primary} />
         </View>
+      ) : groups.length === 0 ? (
+        <View style={styles.emptyState}>
+          <Typography.Body style={styles.emptyText}>
+            You haven't joined any groups yet.
+          </Typography.Body>
+          <Button
+            title="Create your first group"
+            onPress={() => router.push("/create-group" as never)}
+            style={{ marginTop: Spacing.lg }}
+          />
+        </View>
       ) : (
-        <FlatList
-          data={groups}
-          renderItem={renderGroupItem}
-          keyExtractor={(item) => item.group_id}
-          contentContainerStyle={styles.list}
+        <ScrollView
+          contentContainerStyle={styles.scroll}
           refreshControl={
             <RefreshControl
               refreshing={refreshing}
@@ -181,19 +196,54 @@ export default function GroupsScreen() {
               tintColor={Colors.primary}
             />
           }
-          ListEmptyComponent={
-            <View style={styles.emptyState}>
-              <Typography.Body style={styles.emptyText}>
-                You haven't joined any groups yet.
-              </Typography.Body>
-              <Button
-                title="Create your first group"
-                onPress={() => router.push("/create-group" as never)}
-                style={{ marginTop: Spacing.lg }}
-              />
+        >
+          <View style={styles.searchBar}>
+            <Search size={20} color={Colors.textSecondary} />
+            <TextInput
+              style={styles.searchInput}
+              placeholder="Search groups..."
+              value={searchQuery}
+              onChangeText={setSearchQuery}
+              placeholderTextColor={Colors.textSecondary}
+            />
+          </View>
+
+          {hasNoResults && (
+            <Text style={styles.emptyText}>No groups found.</Text>
+          )}
+
+          {pinnedGroups.length > 0 && (
+            <View>
+              <View style={styles.pinnedHeader}>
+                <Pin size={13} color={Colors.primary} fill={Colors.primary} />
+                <Text style={styles.pinnedHeaderText}>Pinned</Text>
+              </View>
+              <View style={styles.sectionCard}>
+                {pinnedGroups.map((group, idx) =>
+                  renderGroupRow(group, idx === pinnedGroups.length - 1),
+                )}
+              </View>
             </View>
-          }
-        />
+          )}
+
+          {alphaSections.length > 0 && (
+            <View>
+              {pinnedGroups.length > 0 && (
+                <Text style={styles.allGroupsLabel}>All Groups</Text>
+              )}
+              {alphaSections.map((section) => (
+                <View key={section.letter}>
+                  <Text style={styles.sectionLetter}>{section.letter}</Text>
+                  <View style={styles.sectionCard}>
+                    {section.items.map((group, idx) =>
+                      renderGroupRow(group, idx === section.items.length - 1),
+                    )}
+                  </View>
+                </View>
+              ))}
+            </View>
+          )}
+        </ScrollView>
       )}
     </SafeAreaView>
   );
@@ -221,17 +271,89 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   createBtnText: { color: Colors.white, fontWeight: "700", fontSize: 14 },
-  list: { paddingHorizontal: Spacing.lg, paddingBottom: 40 },
-  listItem: {
+
+  scroll: { paddingHorizontal: Spacing.lg, paddingBottom: 40 },
+
+  searchBar: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: Colors.white,
+    paddingHorizontal: Spacing.md,
+    height: 50,
+    borderRadius: 15,
+    marginBottom: Spacing.md,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 1,
+  },
+  searchInput: {
+    flex: 1,
+    marginLeft: Spacing.sm,
+    fontSize: 16,
+    color: Colors.text,
+  },
+
+  pinnedHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: Spacing.xs,
+    paddingHorizontal: Spacing.sm,
+    paddingTop: Spacing.md,
+    paddingBottom: Spacing.xs,
+  },
+  pinnedHeaderText: {
+    fontSize: 13,
+    fontWeight: "700",
+    color: Colors.primary,
+    letterSpacing: 0.5,
+  },
+
+  sectionLetter: {
+    fontSize: 13,
+    fontWeight: "700",
+    color: Colors.textSecondary,
+    letterSpacing: 0.5,
+    paddingHorizontal: Spacing.sm,
+    paddingTop: Spacing.md,
+    paddingBottom: Spacing.xs,
+  },
+  allGroupsLabel: {
+    fontSize: 13,
+    fontWeight: "700",
+    color: Colors.textSecondary,
+    letterSpacing: 0.5,
+    paddingHorizontal: Spacing.sm,
+    paddingTop: Spacing.md,
+    paddingBottom: Spacing.xs,
+  },
+
+  sectionCard: {
+    backgroundColor: Colors.white,
+    borderRadius: BorderRadius.card,
+    overflow: "hidden",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.06,
+    shadowRadius: 6,
+    elevation: 2,
+    marginBottom: Spacing.sm,
+  },
+
+  itemRow: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    paddingVertical: Spacing.lg,
+    paddingHorizontal: Spacing.lg,
+    paddingVertical: Spacing.md,
   },
-  listItemBorder: {
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.itemBorder,
+  divider: {
+    height: 1,
+    backgroundColor: Colors.background,
+    marginLeft: 76,
   },
+
   groupInfo: {
     flexDirection: "row",
     alignItems: "center",
@@ -242,28 +364,20 @@ const styles = StyleSheet.create({
   nameRow: { flexDirection: "row", alignItems: "center", gap: Spacing.xs },
   groupName: {
     fontWeight: "800",
-    fontSize: 17,
+    fontSize: 16,
     color: Colors.text,
     maxWidth: 180,
   },
-  pinBadge: {
-    width: 20,
-    height: 20,
-    borderRadius: 10,
-    backgroundColor: `${Colors.primary}15`,
-    alignItems: "center",
-    justifyContent: "center",
-  },
   memberRow: { flexDirection: "row", alignItems: "center", gap: 4 },
   memberCount: { fontSize: 13, color: Colors.textSecondary },
-  rowActions: { flexDirection: "row", alignItems: "center", gap: Spacing.xs },
-  iconBtn: { padding: Spacing.xs },
 
   center: { flex: 1, justifyContent: "center", alignItems: "center" },
   emptyState: { padding: 60, alignItems: "center", justifyContent: "center" },
   emptyText: {
     textAlign: "center",
-    marginTop: 100,
+    marginTop: Spacing.lg,
     color: Colors.textSecondary,
+    fontStyle: "italic",
+    paddingHorizontal: Spacing.md,
   },
 });

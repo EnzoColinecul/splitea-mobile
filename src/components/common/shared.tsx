@@ -1,31 +1,78 @@
-import { BorderRadius, Colors, Spacing } from '@/theme/theme';
-import React from 'react';
-import { ActivityIndicator, StyleProp, StyleSheet, Text, TextInput, TextStyle, TouchableOpacity, View, ViewStyle } from 'react-native';
+import { BorderRadius, Colors, Spacing } from "@/theme/theme";
+import React from "react";
+import {
+  ActivityIndicator,
+  StyleProp,
+  StyleSheet,
+  Text,
+  TextInput,
+  TextStyle,
+  TouchableOpacity,
+  View,
+  ViewStyle,
+} from "react-native";
 
-export const Button = ({ title, onPress, variant = 'primary', style, disabled }: { title: string, onPress: () => void, variant?: 'primary' | 'secondary' | 'outline' | 'danger', style?: StyleProp<ViewStyle>, disabled?: boolean }) => {
+export const Button = ({
+  title,
+  onPress,
+  variant = "primary",
+  style,
+  disabled,
+}: {
+  title: string;
+  onPress: () => void;
+  variant?: "primary" | "secondary" | "outline" | "danger";
+  style?: StyleProp<ViewStyle>;
+  disabled?: boolean;
+}) => {
   const buttonStyle = [
     styles.button,
-    variant === 'primary' && styles.buttonPrimary,
-    variant === 'secondary' && styles.buttonSecondary,
-    variant === 'outline' && styles.buttonOutline,
-    variant === 'danger' && styles.buttonDanger,
+    variant === "primary" && styles.buttonPrimary,
+    variant === "secondary" && styles.buttonSecondary,
+    variant === "outline" && styles.buttonOutline,
+    variant === "danger" && styles.buttonDanger,
     disabled && styles.buttonDisabled,
-    style
+    style,
   ];
 
   const textStyle = [
     styles.buttonText,
-    variant === 'outline' && { color: Colors.primary }
+    variant === "outline" && { color: Colors.primary },
   ];
 
   return (
-    <TouchableOpacity style={buttonStyle} onPress={onPress} activeOpacity={0.8} disabled={disabled}>
+    <TouchableOpacity
+      style={buttonStyle}
+      onPress={onPress}
+      activeOpacity={0.8}
+      disabled={disabled}
+    >
       <Text style={textStyle}>{title}</Text>
     </TouchableOpacity>
   );
 };
 
-export const Input = ({ value, onChangeText, placeholder, secureTextEntry, label, keyboardType, editable = true, containerStyle, style }: { value: string, onChangeText: (text: string) => void, placeholder?: string, secureTextEntry?: boolean, label?: string, keyboardType?: 'default' | 'numeric' | 'email-address' | 'phone-pad', editable?: boolean, containerStyle?: StyleProp<ViewStyle>, style?: StyleProp<TextStyle> }) => (
+export const Input = ({
+  value,
+  onChangeText,
+  placeholder,
+  secureTextEntry,
+  label,
+  keyboardType,
+  editable = true,
+  containerStyle,
+  style,
+}: {
+  value: string;
+  onChangeText: (text: string) => void;
+  placeholder?: string;
+  secureTextEntry?: boolean;
+  label?: string;
+  keyboardType?: "default" | "numeric" | "email-address" | "phone-pad";
+  editable?: boolean;
+  containerStyle?: StyleProp<ViewStyle>;
+  style?: StyleProp<TextStyle>;
+}) => (
   <View style={[styles.inputContainer, containerStyle]}>
     {label && <Text style={styles.label}>{label}</Text>}
     <TextInput
@@ -41,7 +88,13 @@ export const Input = ({ value, onChangeText, placeholder, secureTextEntry, label
   </View>
 );
 
-export const BusyOverlay = ({ visible, label }: { visible: boolean, label?: string }) => {
+export const BusyOverlay = ({
+  visible,
+  label,
+}: {
+  visible: boolean;
+  label?: string;
+}) => {
   if (!visible) return null;
 
   return (
@@ -54,18 +107,78 @@ export const BusyOverlay = ({ visible, label }: { visible: boolean, label?: stri
   );
 };
 
-export const Card = ({ children, style }: { children: React.ReactNode, style?: StyleProp<ViewStyle> }) => (
-  <View style={[styles.card, style]}>
-    {children}
-  </View>
-);
+export const Card = ({
+  children,
+  style,
+}: {
+  children: React.ReactNode;
+  style?: StyleProp<ViewStyle>;
+}) => <View style={[styles.card, style]}>{children}</View>;
 
 export const Typography = {
-  Header: ({ children, style, numberOfLines }: { children: React.ReactNode, style?: StyleProp<TextStyle>, numberOfLines?: number }) => <Text style={[styles.header, style]} numberOfLines={numberOfLines}>{children}</Text>,
-  SubHeader: ({ children, style, numberOfLines }: { children: React.ReactNode, style?: StyleProp<TextStyle>, numberOfLines?: number }) => <Text style={[styles.subHeader, style]} numberOfLines={numberOfLines}>{children}</Text>,
-  Body: ({ children, style, numberOfLines }: { children: React.ReactNode, style?: StyleProp<TextStyle>, numberOfLines?: number }) => <Text style={[styles.body, style]} numberOfLines={numberOfLines}>{children}</Text>,
-  Caption: ({ children, style, numberOfLines }: { children: React.ReactNode, style?: StyleProp<TextStyle>, numberOfLines?: number }) => <Text style={[styles.caption, style]} numberOfLines={numberOfLines}>{children}</Text>,
-  SectionHeader: ({ children, style }: { children: React.ReactNode, style?: StyleProp<TextStyle> }) => <Text style={[styles.sectionHeader, style]}>{String(children).toUpperCase()}</Text>,
+  Header: ({
+    children,
+    style,
+    numberOfLines,
+  }: {
+    children: React.ReactNode;
+    style?: StyleProp<TextStyle>;
+    numberOfLines?: number;
+  }) => (
+    <Text style={[styles.header, style]} numberOfLines={numberOfLines}>
+      {children}
+    </Text>
+  ),
+  SubHeader: ({
+    children,
+    style,
+    numberOfLines,
+  }: {
+    children: React.ReactNode;
+    style?: StyleProp<TextStyle>;
+    numberOfLines?: number;
+  }) => (
+    <Text style={[styles.subHeader, style]} numberOfLines={numberOfLines}>
+      {children}
+    </Text>
+  ),
+  Body: ({
+    children,
+    style,
+    numberOfLines,
+  }: {
+    children: React.ReactNode;
+    style?: StyleProp<TextStyle>;
+    numberOfLines?: number;
+  }) => (
+    <Text style={[styles.body, style]} numberOfLines={numberOfLines}>
+      {children}
+    </Text>
+  ),
+  Caption: ({
+    children,
+    style,
+    numberOfLines,
+  }: {
+    children: React.ReactNode;
+    style?: StyleProp<TextStyle>;
+    numberOfLines?: number;
+  }) => (
+    <Text style={[styles.caption, style]} numberOfLines={numberOfLines}>
+      {children}
+    </Text>
+  ),
+  SectionHeader: ({
+    children,
+    style,
+  }: {
+    children: React.ReactNode;
+    style?: StyleProp<TextStyle>;
+  }) => (
+    <Text style={[styles.sectionHeader, style]}>
+      {String(children).toUpperCase()}
+    </Text>
+  ),
 };
 
 const styles = StyleSheet.create({
@@ -73,26 +186,37 @@ const styles = StyleSheet.create({
     paddingVertical: Spacing.md,
     paddingHorizontal: Spacing.lg,
     borderRadius: BorderRadius.round, // fully rounded capsule
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
   buttonPrimary: { backgroundColor: Colors.primary },
   buttonSecondary: { backgroundColor: Colors.secondary },
-  buttonOutline: { backgroundColor: 'transparent', borderWidth: 1, borderColor: Colors.primary },
+  buttonOutline: {
+    backgroundColor: "transparent",
+    borderWidth: 1,
+    borderColor: Colors.primary,
+  },
   buttonDanger: { backgroundColor: Colors.danger },
   buttonDisabled: { opacity: 0.55 },
-  buttonText: { color: Colors.white, fontWeight: '700', fontSize: 16 },
+  buttonText: { color: Colors.white, fontWeight: "700", fontSize: 16 },
 
-  inputContainer: { marginBottom: Spacing.md, width: '100%' },
-  label: { marginBottom: Spacing.xs, color: Colors.text, fontWeight: '700', fontSize: 13 },
+  inputContainer: { marginBottom: Spacing.md, width: "100%" },
+  label: {
+    marginBottom: Spacing.xs,
+    color: Colors.text,
+    fontWeight: "700",
+    fontSize: 13,
+  },
   input: {
-    backgroundColor: '#F9FAFB',
-    borderWidth: 1.5,
-    borderColor: Colors.border,
+    backgroundColor: Colors.white,
     borderRadius: BorderRadius.lg,
     padding: Spacing.md,
     fontSize: 16,
     color: Colors.text,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.06,
+    shadowRadius: 6,
   },
   inputDisabled: {
     opacity: 0.65,
@@ -102,23 +226,39 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.white,
     borderRadius: BorderRadius.card,
     padding: Spacing.lg,
-    shadowColor: '#000',
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.06,
     shadowRadius: 6,
     elevation: 2,
   },
 
-  header: { fontSize: 32, fontWeight: '800', color: Colors.text, marginBottom: Spacing.xs },
-  subHeader: { fontSize: 20, fontWeight: '700', color: Colors.textSecondary, marginBottom: Spacing.md },
+  header: {
+    fontSize: 32,
+    fontWeight: "800",
+    color: Colors.text,
+    marginBottom: Spacing.xs,
+  },
+  subHeader: {
+    fontSize: 20,
+    fontWeight: "700",
+    color: Colors.textSecondary,
+    marginBottom: Spacing.md,
+  },
   body: { fontSize: 16, color: Colors.text },
   caption: { fontSize: 14, color: Colors.textSecondary },
-  sectionHeader: { fontSize: 13, fontWeight: '700', color: Colors.textSecondary, marginBottom: Spacing.sm, letterSpacing: 0.5 },
+  sectionHeader: {
+    fontSize: 13,
+    fontWeight: "700",
+    color: Colors.textSecondary,
+    marginBottom: Spacing.sm,
+    letterSpacing: 0.5,
+  },
   busyOverlay: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(255, 255, 255, 0.72)',
-    alignItems: 'center',
-    justifyContent: 'center',
+    backgroundColor: "rgba(255, 255, 255, 0.72)",
+    alignItems: "center",
+    justifyContent: "center",
     zIndex: 100,
     elevation: 12,
   },
@@ -127,18 +267,18 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.xl,
     paddingVertical: Spacing.lg,
     borderRadius: BorderRadius.card,
-    backgroundColor: 'rgba(255,255,255,0.95)',
-    shadowColor: '#000',
+    backgroundColor: "rgba(255,255,255,0.95)",
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.12,
     shadowRadius: 12,
     elevation: 6,
-    alignItems: 'center',
+    alignItems: "center",
     gap: Spacing.md,
   },
   busyText: {
     color: Colors.text,
-    fontWeight: '700',
-    textAlign: 'center',
+    fontWeight: "700",
+    textAlign: "center",
   },
 });
