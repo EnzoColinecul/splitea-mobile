@@ -29,12 +29,12 @@ There is no test runner configured — no unit/integration/E2E tests exist yet.
 
 Route files live in `src/app/` and thin-wrap screen components from `src/screens/`:
 
-| Route group | Purpose |
-|---|---|
-| `(auth)/` | Login, register |
-| `(tabs)/` | Main tab navigation: home, groups, add, friends, settings |
-| `expense/` | Multi-step expense flow: choice → method → details → scan-receipt → receipt-split-preview → view |
-| `api/` | Expo server-route proxies for transcription and S3 presigned URLs |
+| Route group       | Purpose                                                                                                                            |
+| ----------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
+| `(auth)/`         | Login, register                                                                                                                    |
+| `(tabs)/`         | Main tab navigation: home, groups, add, friends, settings                                                                          |
+| `expense/`        | Multi-step expense flow: choice → method → details → scan-receipt → receipt-split-preview → view                                   |
+| `api/`            | Expo server-route proxies for transcription and S3 presigned URLs                                                                  |
 | Root-level routes | profile, profile-settings, group-detail, create-group, settle-up, notifications, friend-requests, currency-picker, language-picker |
 
 The `src/app/` files are thin shells — all logic and UI lives in `src/screens/`.
@@ -44,6 +44,7 @@ Path alias `@/` maps to `src/`.
 ### Auth Flow
 
 `src/hooks/useAuth.tsx` is the global auth context (wrap: `AuthProvider` in `src/app/_layout.tsx`):
+
 - On mount: reads `userToken` from `expo-secure-store`, verifies it against `userApi.getProfile()`.
 - On 401 from any API call: `src/utils/auth-events.ts` event bus triggers `signOut()`.
 - Route protection: segment-based redirect — unauthenticated → `/(auth)/login`, authenticated + in auth screens → `/(tabs)`.
@@ -52,6 +53,7 @@ Path alias `@/` maps to `src/`.
 ### API Layer
 
 `src/api/api-client.ts` — axios instance:
+
 - Base URL is currently **hardcoded** (`http://192.168.1.172:8000/api`) — must be updated to the local machine IP for physical device testing.
 - Request interceptor: attaches `Bearer` token from SecureStore.
 - Response interceptor: emits unauthorized event on 401.
@@ -96,7 +98,6 @@ List/section cards that sit on the `Colors.background` surface (e.g. the grouped
 
 ```ts
 sectionCard: {
-  padding: Spacing.xs,
   borderRadius: 24,
   backgroundColor: Colors.white,
   borderWidth: 0,
@@ -109,6 +110,8 @@ sectionCard: {
 ```
 
 Notes:
+
+- The shared `<Card>` component (`src/components/common/shared.tsx`) now carries this shadow as its base `card` style, so **preferring `<Card>` is the standard way to get the convention**. Only replicate the style block above for bespoke `View` cards that can't use `<Card>` (e.g. row-container cards that need `overflow: 'hidden'` to clip selected-row highlights).
 - Separation from the background comes from the **soft elevated shadow** (`offset height 4`, `radius 10`), not a border. Do not add `borderWidth` to make cards stand out — match this shadow instead.
 - `borderColor` has no visual effect without a `borderWidth`, so don't rely on it alone.
 - Use `24` for the card corner radius (matches `BorderRadius.card`).

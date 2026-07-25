@@ -325,7 +325,6 @@ const styles = StyleSheet.create({
   },
 
   sectionCard: {
-    padding: Spacing.xs,
     borderRadius: 24,
     backgroundColor: Colors.white,
     borderWidth: 0,

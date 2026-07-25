@@ -227,9 +227,9 @@ const styles = StyleSheet.create({
     borderRadius: BorderRadius.card,
     padding: Spacing.lg,
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.06,
-    shadowRadius: 6,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.05,
+    shadowRadius: 10,
     elevation: 2,
   },
 
