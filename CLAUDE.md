@@ -90,6 +90,29 @@ Core entities: `User`, `AuthResponse`, `UserUpdate`, `Group`, `Friend`, `FriendR
 
 Use tokens from `src/theme/theme.ts` (`Colors`, `Spacing`, `BorderRadius`) for all styling. Avoid inline magic numbers for colors or spacing. `src/constants/colors.ts` is a secondary color reference — `theme.ts` is the source of truth.
 
+#### Card style convention
+
+List/section cards that sit on the `Colors.background` surface (e.g. the grouped rows in `groups-screen` and `friends-screen`) should follow this style so they stay visually consistent and clearly separated from the background:
+
+```ts
+sectionCard: {
+  padding: Spacing.xs,
+  borderRadius: 24,
+  backgroundColor: Colors.white,
+  borderWidth: 0,
+  shadowColor: "#000",
+  shadowOffset: { width: 0, height: 4 },
+  shadowOpacity: 0.05,
+  shadowRadius: 10,
+  elevation: 2,
+},
+```
+
+Notes:
+- Separation from the background comes from the **soft elevated shadow** (`offset height 4`, `radius 10`), not a border. Do not add `borderWidth` to make cards stand out — match this shadow instead.
+- `borderColor` has no visual effect without a `borderWidth`, so don't rely on it alone.
+- Use `24` for the card corner radius (matches `BorderRadius.card`).
+
 ### AI Receipt Flow
 
 The full receipt flow: `scan-receipt` → captures image + optional voice → calls `/api/transcribe+api.ts` (voice transcription proxy) → uploads receipt via presigned URL from `/api/storage/presigned+api.ts` → `receipt-split-preview` → `expense/details`.

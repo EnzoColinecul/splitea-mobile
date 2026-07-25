@@ -5,13 +5,7 @@ import { BorderRadius, Colors, Spacing } from "@/theme/theme";
 import { Group } from "@/types";
 import { useFocusEffect } from "@react-navigation/native";
 import { useRouter } from "expo-router";
-import {
-  ChevronRight,
-  Pin,
-  Plus,
-  Search,
-  Users,
-} from "lucide-react-native";
+import { ChevronRight, Pin, Plus, Search, Users } from "lucide-react-native";
 import React, { useCallback, useState } from "react";
 import {
   ActivityIndicator,
@@ -280,7 +274,8 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.white,
     paddingHorizontal: Spacing.md,
     height: 50,
-    borderRadius: 15,
+    borderRadius: 24,
+    borderColor: Colors.itemBorder,
     marginBottom: Spacing.md,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 1 },
@@ -330,15 +325,15 @@ const styles = StyleSheet.create({
   },
 
   sectionCard: {
+    padding: Spacing.xs,
+    borderRadius: 24,
     backgroundColor: Colors.white,
-    borderRadius: BorderRadius.card,
-    overflow: "hidden",
+    borderWidth: 0,
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.06,
-    shadowRadius: 6,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.05,
+    shadowRadius: 10,
     elevation: 2,
-    marginBottom: Spacing.sm,
   },
 
   itemRow: {

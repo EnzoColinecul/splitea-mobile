@@ -14,8 +14,6 @@ import React, { useCallback, useEffect, useState } from "react";
 import {
   ActivityIndicator,
   DeviceEventEmitter,
-  NativeScrollEvent,
-  NativeSyntheticEvent,
   Platform,
   RefreshControl,
   ScrollView,
@@ -25,7 +23,49 @@ import {
   useWindowDimensions,
   View,
 } from "react-native";
+import Animated, {
+  Extrapolation,
+  interpolate,
+  interpolateColor,
+  SharedValue,
+  useAnimatedScrollHandler,
+  useAnimatedStyle,
+  useSharedValue,
+} from "react-native-reanimated";
 import { SafeAreaView } from "react-native-safe-area-context";
+
+function BalanceDot({
+  index,
+  scrollX,
+  interval,
+}: {
+  index: number;
+  scrollX: SharedValue<number>;
+  interval: number;
+}) {
+  const animatedStyle = useAnimatedStyle(() => {
+    const inputRange = [
+      (index - 1) * interval,
+      index * interval,
+      (index + 1) * interval,
+    ];
+    return {
+      width: interpolate(
+        scrollX.value,
+        inputRange,
+        [8, 20, 8],
+        Extrapolation.CLAMP,
+      ),
+      backgroundColor: interpolateColor(scrollX.value, inputRange, [
+        "#E2E8F0",
+        Colors.text,
+        "#E2E8F0",
+      ]),
+    };
+  });
+
+  return <Animated.View style={[styles.balanceDot, animatedStyle]} />;
+}
 
 export default function DashboardScreen() {
   const router = useRouter();
@@ -35,9 +75,12 @@ export default function DashboardScreen() {
   const [notifCount, setNotifCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [activeBalanceCard, setActiveBalanceCard] = useState(0);
   const { width: windowWidth } = useWindowDimensions();
   const cardWidth = windowWidth - Spacing.xl * 2 - Spacing.md;
+  const balanceScrollX = useSharedValue(0);
+  const onBalanceScroll = useAnimatedScrollHandler((event) => {
+    balanceScrollX.value = event.contentOffset.x;
+  });
 
   const fetchData = useCallback(async () => {
     try {
@@ -140,17 +183,6 @@ export default function DashboardScreen() {
     },
   ];
 
-  const handleBalanceScroll = (
-    event: NativeSyntheticEvent<NativeScrollEvent>,
-  ) => {
-    const nextIndex = Math.round(
-      event.nativeEvent.contentOffset.x / (cardWidth + Spacing.md),
-    );
-    if (nextIndex !== activeBalanceCard) {
-      setActiveBalanceCard(nextIndex);
-    }
-  };
-
   return (
     <SafeAreaView style={styles.container} edges={["top"]}>
       <ScrollView
@@ -195,14 +227,15 @@ export default function DashboardScreen() {
         </View>
 
         <View style={styles.balanceSection}>
-          <ScrollView
+          <Animated.ScrollView
             horizontal
             decelerationRate="fast"
             showsHorizontalScrollIndicator={false}
             snapToInterval={cardWidth + Spacing.md}
             snapToAlignment="start"
             contentContainerStyle={styles.balanceScrollContent}
-            onMomentumScrollEnd={handleBalanceScroll}
+            onScroll={onBalanceScroll}
+            scrollEventThrottle={16}
           >
             {balanceCards.map((card, index) => (
               <TouchableOpacity
@@ -263,18 +296,15 @@ export default function DashboardScreen() {
                 </Card>
               </TouchableOpacity>
             ))}
-          </ScrollView>
+          </Animated.ScrollView>
 
           <View style={styles.balanceDots}>
             {balanceCards.map((card, index) => (
-              <View
+              <BalanceDot
                 key={card.key}
-                style={[
-                  styles.balanceDot,
-                  index === activeBalanceCard
-                    ? styles.balanceDotActive
-                    : { backgroundColor: "#E2E8F0" },
-                ]}
+                index={index}
+                scrollX={balanceScrollX}
+                interval={cardWidth + Spacing.md}
               />
             ))}
           </View>
@@ -477,8 +507,7 @@ const styles = StyleSheet.create({
     gap: 8,
     marginTop: Spacing.sm,
   },
-  balanceDot: { width: 8, height: 8, borderRadius: 4 },
-  balanceDotActive: { width: 20, height: 8, backgroundColor: Colors.text },
+  balanceDot: { height: 8, borderRadius: 4 },
   recentHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
