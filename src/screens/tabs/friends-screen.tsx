@@ -136,7 +136,12 @@ export default function FriendsScreen() {
                 {searchResults.map((user) => (
                   <Card key={user.user_id} style={styles.friendCard}>
                     <View style={{ marginRight: Spacing.md }}>
-                      <Avatar imageUrl={user.avatar_url} name={user.first_name} size={48} />
+                      <Avatar
+                        imageUrl={user.avatar_url}
+                        cacheKey={user.avatar_cache_key}
+                        name={user.first_name}
+                        size={48}
+                      />
                     </View>
                     <View style={styles.friendInfo}>
                       <Typography.Body style={styles.friendName}>{`${user.first_name} ${user.last_name}`}</Typography.Body>
@@ -194,7 +199,12 @@ export default function FriendsScreen() {
                     >
                       <Card style={styles.friendCard}>
                         <View style={{ marginRight: Spacing.md }}>
-                          <Avatar imageUrl={friend.avatar_url} name={friend.first_name} size={48} />
+                          <Avatar
+                            imageUrl={friend.avatar_url}
+                            cacheKey={friend.avatar_cache_key}
+                            name={friend.first_name}
+                            size={48}
+                          />
                         </View>
                         <View style={styles.friendInfo}>
                           <Typography.Body style={styles.friendName}>

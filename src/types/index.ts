@@ -8,6 +8,8 @@ export interface User {
   language: string;
   avatar_url?: string | null;
   avatar_s3_key?: string | null;
+  /** Stable image identity for caching — see the `cacheKey` prop on `Avatar`. */
+  avatar_cache_key?: string | null;
 }
 
 export interface AuthResponse {
@@ -34,6 +36,8 @@ export interface Group {
   emoji?: string | null;
   picture_s3_key?: string | null;
   picture_url?: string | null;
+  /** Stable image identity for caching — see the `cacheKey` prop on `Avatar`. */
+  picture_cache_key?: string | null;
   is_pinned?: boolean;
   owner_id?: string;
   users?: string[];
@@ -47,6 +51,7 @@ export interface Friend {
   email: string;
   created_at: string;
   avatar_url?: string | null;
+  avatar_cache_key?: string | null;
   net_balance?: number;
 }
 
@@ -55,6 +60,7 @@ export interface FriendBalance {
   first_name: string;
   last_name: string;
   avatar_url?: string | null;
+  avatar_cache_key?: string | null;
   amount: number;
   direction: 'owes_me' | 'i_owe' | 'settled';
 }

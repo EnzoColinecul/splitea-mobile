@@ -78,6 +78,7 @@ export default function GroupsScreen() {
         <View style={styles.groupInfo}>
           <Avatar
             imageUrl={item.picture_url}
+            cacheKey={item.picture_cache_key}
             emoji={item.emoji}
             name={item.name}
             size={56}

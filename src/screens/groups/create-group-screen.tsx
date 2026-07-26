@@ -159,7 +159,12 @@ export default function CreateGroupScreen() {
                   disabled={isBusy}
                 >
                   <View style={{ marginRight: Spacing.md }}>
-                    <Avatar imageUrl={friend.avatar_url} name={friend.first_name} size={44} />
+                    <Avatar
+                      imageUrl={friend.avatar_url}
+                      cacheKey={friend.avatar_cache_key}
+                      name={friend.first_name}
+                      size={44}
+                    />
                   </View>
                   <View style={{ flex: 1 }}>
                     <Text style={styles.friendName}>{friend.first_name} {friend.last_name}</Text>

@@ -147,6 +147,7 @@ export default function BalanceDetailScreen() {
                   >
                     <Avatar
                       imageUrl={b.avatar_url}
+                      cacheKey={b.avatar_cache_key}
                       name={`${b.first_name} ${b.last_name}`}
                       size={44}
                     />

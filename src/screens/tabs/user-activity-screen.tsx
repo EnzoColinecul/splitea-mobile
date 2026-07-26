@@ -174,6 +174,7 @@ export default function UserActivityScreen() {
         <Card style={styles.profileCard}>
           <Avatar
             imageUrl={friend?.avatar_url}
+            cacheKey={friend?.avatar_cache_key}
             name={friendName}
             size={72}
           />
