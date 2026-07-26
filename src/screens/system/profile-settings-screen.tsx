@@ -129,6 +129,7 @@ export default function ProfileSettingsScreen() {
           <View>
             <Avatar
               imageUrl={user?.avatar_url}
+              cacheKey={user?.avatar_cache_key}
               name={user?.first_name || ''}
               size={88}
               backgroundColor={Colors.itemBorder}
